@@ -1,0 +1,33 @@
+# 调试选项
+debug: false
+
+# 消息前缀
+prefix: "&6[属性药水]"
+
+# 用什么识别药水，name表示药水名，lore表示药水的lore，模糊匹配
+identifier: 'name'
+
+# 是否启用龙核兼容
+dragoncore: false
+
+# 按键及对应的槽位
+dragoncoreKeys:
+  Z: '额外槽位1'
+  X: '额外槽位2'
+  C: '额外槽位3'
+
+# 药水组设置，每个药水有单独的冷却，同组的药水共享冷却，例如使用了力量药水，30秒内无法再次使用力量或体力药水
+# 而30秒后初级药水组冷却完毕，但力量药水冷却60秒，仍旧无法使用，此时你只能使用体力药水
+group:
+  初级药水组: 10
+  中级药水组: 30
+  高级药水组: 60
+
+# 消息
+messages:
+  reload: "&a插件配置重载成功！"
+  usePotion: "&a成功为玩家&6 %player% &a添加 %potion% &a效果，持续&e %time% &a秒"
+  useDeny: "&c您不满足该药水的使用条件！"
+  outPotion: "%potion% &5效果已结束！"
+  onPotionCooldown: "%potion% &7冷却中，剩余&e %cooldown% &7秒"
+  onGroupCooldown: "&b%group% &7冷却中，剩余&e %cooldown% &7秒"

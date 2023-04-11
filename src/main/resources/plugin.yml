@@ -1,0 +1,15 @@
+name: AttributePotion
+author: Cordori
+version: '${project.version}'
+main: cordori.attributepotion.AttributePotion
+depend:
+  - AttributePlus
+softdepend:
+  - PlaceholderAPI
+  - SkillAPI
+  - DragonCore
+commands:
+  attributepotion:
+    permission: admin
+    aliases:
+      - apn
