@@ -64,5 +64,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.ahocorasick:ahocorasick:0.6.3" level="project" />
+    <orderEntry type="library" name="Maven: com.hankcs:aho-corasick-double-array-trie:1.2.3" level="project" />
   </component>
 </module>

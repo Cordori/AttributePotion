@@ -1,5 +1,6 @@
 package cordori.attributepotion.file;
 
+import com.hankcs.algorithm.AhoCorasickDoubleArrayTrie;
 import cordori.attributepotion.AttributePotion;
 import cordori.attributepotion.utils.Potion;
 import eos.moe.dragoncore.api.CoreAPI;
@@ -15,6 +16,7 @@ public class ConfigManager {
     public static String prefix;
     public static String identifier;
     public static boolean dragoncore;
+    public static AhoCorasickDoubleArrayTrie<String> trie = new AhoCorasickDoubleArrayTrie<>();
     public static HashMap<String, String> coreKeys = new HashMap<>();
     public static HashMap<String, Integer> group = new HashMap<>();
     public static HashMap<UUID, HashMap<String, Long>> cooldown = new HashMap<>();
@@ -70,6 +72,15 @@ public class ConfigManager {
         for(String list : stringList) colorList.add(list.replaceAll("&", "§"));
         return colorList;
 
+    }
+    public static void trieBuild(AttributePotion ap) {
+        File file = new File(ap.getDataFolder(), "config.yml");
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        if (config.getString("identifier").equalsIgnoreCase("name")) {
+            trie.build(potionNames);
+        } else {
+            trie.build(potionLores);
+        }
     }
 
     public static void loadPotions(AttributePotion ap) {
@@ -133,6 +144,7 @@ public class ConfigManager {
                 System.out.println("§6----------------------------");
             }
         }
+        trieBuild(ap);
         if(debug) {
             System.out.println(potionNames);
             System.out.println(potionLores);

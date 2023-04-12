@@ -1,6 +1,5 @@
 package cordori.attributepotion.listener;
 
-import cordori.attributepotion.AttributePotion;
 import cordori.attributepotion.file.ConfigManager;
 import cordori.attributepotion.utils.Potion;
 import eos.moe.dragoncore.api.SlotAPI;
@@ -19,7 +18,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public class DCoreUseEvent implements Listener {
-    private static final AttributePotion ap = AttributePotion.getInstance();
     @EventHandler
     public void onKeyPress(KeyPressEvent event) {
         if(!ConfigManager.dragoncore) return;
@@ -62,11 +60,7 @@ public class DCoreUseEvent implements Listener {
                     }
                     //条件判断
                     List<String> conditions = potion.getConditions();
-                    if(!conditions.isEmpty() && !UseEvent.checkConditions(conditions, player, name)) {
-                        player.sendMessage(ConfigManager.prefix + ap.getConfig()
-                                .getString("messages.useDeny").replaceAll("&", "§"));
-                        return;
-                    }
+                    if(UseEvent.checkConditions(conditions, player, name)) return;
                     if(ConfigManager.debug) {
                         long endTime = System.currentTimeMillis();
                         long elapsedTime = endTime - startTime;

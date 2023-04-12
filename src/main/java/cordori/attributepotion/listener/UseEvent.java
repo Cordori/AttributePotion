@@ -34,24 +34,6 @@ public class UseEvent implements Listener {
     private static boolean debug = ConfigManager.debug;
     private static final ScriptEngineManager mgr = new ScriptEngineManager();
     private static final ScriptEngine engine = mgr.getEngineByName("nashorn");
-    public static boolean checkItem(ItemStack item) { return item != null && item.getType() != Material.AIR; }
-    public static boolean checkConditions(List<String> conditions, Player player, String name) {
-        for (String condition : conditions) {
-            if (condition.contains("permission:")) {
-                condition = condition.replace("permission:", "");
-                if(!player.hasPermission(condition)) return false;
-            } else {
-                try {
-                    condition = PlaceholderAPI.setPlaceholders(player, condition);
-                    if(!(boolean)engine.eval(condition)) return false;
-                } catch (ScriptException e) {
-                    ap.getLogger().warning("尝试解析 " + name +" §e条件变量或表达式失败，请检查配置！");
-                    if(debug) throw new RuntimeException(e);
-                }
-            }
-        }
-        return true;
-    }
 
     /*
     判断动作是否符合
@@ -64,35 +46,56 @@ public class UseEvent implements Listener {
     设置物品冷却
     执行指令
     */
-    //匹配物品方法
+
+    public static boolean checkItem(ItemStack item) { return item != null && item.getType() != Material.AIR; }
     public static String matchItem(ItemStack item) {
-        String key = null;
-        if(ConfigManager.identifier.equalsIgnoreCase("name")) {
-            String itemName = item.getItemMeta().getDisplayName();
-            if(itemName == null) return null;
-            for (String name : ConfigManager.potionNames.keySet()) {
-                if (itemName.contains(name)) {
-                    key = ConfigManager.potionNames.get(name);
-                    break;
-                }
-            }
-        }
-        else if(ConfigManager.identifier.equalsIgnoreCase("lore")) {
-            List<String> itemLores = item.getItemMeta().getLore();
-            if(itemLores == null) return null;
-            boolean find = false;
-            for(String itemLore : itemLores) {
-                for(String lore : ConfigManager.potionLores.keySet()) {
-                    if(itemLore.contains(lore)) {
-                        key = ConfigManager.potionLores.get(lore);
-                        find = true;
-                        break;
+        String key;
+        /*
+        if(ConfigManager.potionKeys.size() <= 50) {
+            if(ConfigManager.identifier.equalsIgnoreCase("name")) {
+                String itemName = item.getItemMeta().getDisplayName();
+                if(itemName == null) return null;
+                for (String name : ConfigManager.potionNames.keySet()) {
+                    if (itemName.contains(name)) {
+                        key = ConfigManager.potionNames.get(name);
+                        return key;
                     }
                 }
-                if(find) break;
             }
-        }
-        return key;
+            else if(ConfigManager.identifier.equalsIgnoreCase("lore")) {
+                List<String> itemLores = item.getItemMeta().getLore();
+                if(itemLores == null) return null;
+                for(String itemLore : itemLores) {
+                    for(String lore : ConfigManager.potionLores.keySet()) {
+                        if(itemLore.contains(lore)) {
+                            key = ConfigManager.potionLores.get(lore);
+                            return key;
+                        }
+                    }
+                }
+            }
+        } else {
+
+         */
+        if(ConfigManager.identifier.equalsIgnoreCase("name")) {
+            String text = item.getItemMeta().getDisplayName();
+            if (text == null) return null;
+            key = ConfigManager.trie.parseText(text)
+                    .stream()
+                    .map(hit -> hit.value)
+                    .findFirst()
+                    .orElse(null);
+            return key;
+        } else if(ConfigManager.identifier.equalsIgnoreCase("lore")) {
+            if(item.getItemMeta().getLore() == null) return null;
+            String text = String.join(" ", item.getItemMeta().getLore());
+            key = ConfigManager.trie.parseText(text)
+                    .stream()
+                    .map(hit -> hit.value)
+                    .findFirst()
+                    .orElse(null);
+            return key;
+        } else return null;
     }
     public static boolean isGroupOnCooldown(Player player, UUID uuid, String group, long useTime) {
         long lastGroupTime = 0;
@@ -130,6 +133,32 @@ public class UseEvent implements Listener {
                         .replace("%cooldown%", String.valueOf(potionCooldown - (useTime - lastPotionTime) / 1000))
                         .replaceAll("&", "§"));
                 return true;
+            }
+        }
+        return false;
+    }
+    public static boolean checkConditions(List<String> conditions, Player player, String name) {
+        if(conditions.isEmpty()) return true;
+        for (String condition : conditions) {
+            if (condition.contains("permission:")) {
+                condition = condition.replace("permission:", "");
+                if(!player.hasPermission(condition)) {
+                    player.sendMessage(ConfigManager.prefix + ap.getConfig()
+                            .getString("messages.useDeny").replaceAll("&", "§"));
+                    return true;
+                }
+            } else {
+                try {
+                    condition = PlaceholderAPI.setPlaceholders(player, condition);
+                    if(!(boolean)engine.eval(condition)) {
+                        player.sendMessage(ConfigManager.prefix + ap.getConfig()
+                                .getString("messages.useDeny").replaceAll("&", "§"));
+                        return true;
+                    }
+                } catch (ScriptException e) {
+                    ap.getLogger().warning("尝试解析 " + name +" §e条件变量或表达式失败，请检查配置！");
+                    if(debug) throw new RuntimeException(e);
+                }
             }
         }
         return false;
@@ -218,11 +247,9 @@ public class UseEvent implements Listener {
         if(!attributes.isEmpty()) {
             List<String> attrList = new ArrayList<>(PlaceholderAPI.setPlaceholders(player, attributes));
             AttributeData data = AttributeAPI.getAttrData(player);
-            String result = String.join(",", attrList);
             if(options.containsKey("clear") && !options.get("clear")) {
-                //我直接化身寄生虫在楠木身上吸血（）
-                Bukkit.getScheduler().runTask(ap, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "ap persistent " + player.getName()
-                        + " " + "AttributePotion_" + key + " " + result + " " + time));
+                Bukkit.getScheduler().runTask(ap, () -> AttributeAPI.getAPI().addPersistentSourceAttribute
+                        (data, "AttributePotion_" + key, attrList, time));
             } else {
                 AttributeAPI.addSourceAttribute(data, "AttributePotion_" + key, attrList);
             }
@@ -232,8 +259,8 @@ public class UseEvent implements Listener {
                     .replace("%time%", String.valueOf(time))
                     .replaceAll("&", "§"));
             if(time == 0) {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "ap persistent " + player.getName()
-                        + " " + "AttributePotion_" + key + " " + result + " -1");
+                Bukkit.getScheduler().runTask(ap, () -> AttributeAPI.getAPI().addPersistentSourceAttribute
+                        (data, "AttributePotion_" + key, attrList, -1));
             }
             //到时清除属性源
             if(time>0) {
@@ -261,8 +288,7 @@ public class UseEvent implements Listener {
         }
         //设置物品冷却
         if(!options.isEmpty() && options.containsKey("cool")) {
-            boolean value = options.get("cool");
-            if (value) player.setCooldown(item.getType(), potion.getCooldown() * 20);
+            if (options.get("cool")) player.setCooldown(item.getType(), potion.getCooldown() * 20);
         }
     }
     public static void commandsProcess(Potion potion, Player player) {
@@ -274,7 +300,7 @@ public class UseEvent implements Listener {
             for (String command : commands) {
                 if (command.startsWith("[console]")) {
                     console = true;
-                    command = command.replace("[console]", "").replace("%player%", playerName);
+                    command = command.substring(9).replace("%player%", playerName);
                     sender = Bukkit.getConsoleSender();
                 }
                 if (console) {
@@ -337,18 +363,14 @@ public class UseEvent implements Listener {
 
         //不满足使用条件
         List<String> conditions = potion.getConditions();
-        if(!conditions.isEmpty() && !checkConditions(conditions, player, name)) {
-            player.sendMessage(ConfigManager.prefix + ap.getConfig()
-                    .getString("messages.useDeny").replaceAll("&", "§"));
-            return;
-        }
+        if(checkConditions(conditions, player, name)) return;
 
         //处理effects
         effectsProcess(player, potion);
         if(debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点4消耗的时间：" + elapsedTime + "ms");
+            System.out.println("§e 此处断点3消耗的时间：" + elapsedTime + "ms");
         }
 
         //处理属性lore中的变量与运算并添加属性
@@ -357,7 +379,7 @@ public class UseEvent implements Listener {
         if(debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点3消耗的时间：" + elapsedTime + "ms");
+            System.out.println("§e 此处断点4消耗的时间：" + elapsedTime + "ms");
         }
 
         //添加冷却
@@ -380,7 +402,7 @@ public class UseEvent implements Listener {
         }
 
         //处理指令
-        commandsProcess(potion, player);
+
         if(debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;

@@ -1,6 +1,8 @@
 package cordori.attributepotion.utils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class Potion {
     private final String key;
@@ -34,6 +36,7 @@ public class Potion {
         this.commands = commands != null ? commands : Collections.emptyList();
         this.options = options != null ? options : Collections.emptyMap();
     }
+
 
     public String getKey() {
         return key;

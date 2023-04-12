@@ -1,6 +1,7 @@
+D:\MyPlugins\AttributePotion\src\main\java\cordori\attributepotion\listener\DCoreUseEvent.java
 D:\MyPlugins\AttributePotion\src\main\java\cordori\attributepotion\AttributePotion.java
 D:\MyPlugins\AttributePotion\src\main\java\cordori\attributepotion\utils\Potion.java
 D:\MyPlugins\AttributePotion\src\main\java\cordori\attributepotion\command\MainCommand.java
-D:\MyPlugins\AttributePotion\src\main\java\cordori\attributepotion\file\SQLite.java
+D:\MyPlugins\AttributePotion\src\main\java\cordori\attributepotion\hook\PAPIHook.java
 D:\MyPlugins\AttributePotion\src\main\java\cordori\attributepotion\listener\UseEvent.java
 D:\MyPlugins\AttributePotion\src\main\java\cordori\attributepotion\file\ConfigManager.java
