@@ -41,6 +41,19 @@ public class ConfigManager {
         Set<String> groupKeys = config.getConfigurationSection("group").getKeys(false);
         Set<String> dragoncoreKeys = config.getConfigurationSection("dragoncoreKeys").getKeys(false);
 
+        group.clear();
+        for(String groupKey : groupKeys) {
+            int groupTime = config.getInt("group." + groupKey);
+            group.put(groupKey, groupTime);
+            if(debug) {
+                System.out.println("§6----------------------------");
+                System.out.println("§a 药水组名称: " + groupKey);
+                System.out.println("§a 药水组冷却: " + groupTime);
+                System.out.println("§6----------------------------");
+            }
+        }
+
+        if(!AttributePotion.DragonCore) return;
         coreKeys.clear();
         for(String dragoncoreKey : dragoncoreKeys) {
             String slotName = config.getString("dragoncoreKeys." + dragoncoreKey);
@@ -50,18 +63,6 @@ public class ConfigManager {
                 System.out.println("§6----------------------------");
                 System.out.println("§a 按键名称: " + dragoncoreKey);
                 System.out.println("§a 槽位名称: " + slotName);
-                System.out.println("§6----------------------------");
-            }
-        }
-
-        group.clear();
-        for(String groupKey : groupKeys) {
-            int groupTime = config.getInt("group." + groupKey);
-            group.put(groupKey, groupTime);
-            if(debug) {
-                System.out.println("§6----------------------------");
-                System.out.println("§a 药水组名称: " + groupKey);
-                System.out.println("§a 药水组冷却: " + groupTime);
                 System.out.println("§6----------------------------");
             }
         }

@@ -1,6 +1,7 @@
 name: AttributePotion
-author: Cordori
+author: 'Cordori'
 version: '${project.version}'
+api-version: 1.13
 main: cordori.attributepotion.AttributePotion
 depend:
   - AttributePlus

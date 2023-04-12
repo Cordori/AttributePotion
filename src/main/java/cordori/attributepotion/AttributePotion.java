@@ -16,7 +16,8 @@ import java.nio.file.Files;
 
 public final class AttributePotion extends JavaPlugin {
     private static AttributePotion Instance;
-    public static boolean skillapi;
+    public static boolean Skillapi;
+    public static boolean DragonCore;
     public static AttributePotion getInstance() {
         return Instance;
     }
@@ -50,13 +51,14 @@ public final class AttributePotion extends JavaPlugin {
         }
         if(Bukkit.getPluginManager().getPlugin("SkillAPI") != null) {
             getLogger().info("§6[属性药水]§6已找到SkillAPI插件，可使用回复Mana功能！");
-            skillapi = true;
+            Skillapi = true;
         } else {
             getLogger().warning("§6[属性药水]§e未找到SkillAPI插件，无法使用回复Mana功能！");
         }
         if(Bukkit.getPluginManager().getPlugin("DragonCore") != null) {
             getLogger().info("§6[属性药水]§a已找到DragonCore插件，可启用龙核按键使用药水！");
             Bukkit.getPluginManager().registerEvents(new DCoreUseEvent(), this);
+            DragonCore = true;
         } else {
             getLogger().warning("§6[属性药水]§e未找到DragonCore插件，无法启用龙核按键使用药水！");
         }

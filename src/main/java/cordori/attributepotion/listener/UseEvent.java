@@ -31,7 +31,6 @@ import static com.google.common.collect.Sets.newHashSet;
 
 public class UseEvent implements Listener {
     private static final AttributePotion ap = AttributePotion.getInstance();
-    private static boolean debug = ConfigManager.debug;
     private static final ScriptEngineManager mgr = new ScriptEngineManager();
     private static final ScriptEngine engine = mgr.getEngineByName("nashorn");
 
@@ -141,7 +140,7 @@ public class UseEvent implements Listener {
         if(conditions.isEmpty()) return true;
         for (String condition : conditions) {
             if (condition.contains("permission:")) {
-                condition = condition.replace("permission:", "");
+                condition = condition.substring(10);
                 if(!player.hasPermission(condition)) {
                     player.sendMessage(ConfigManager.prefix + ap.getConfig()
                             .getString("messages.useDeny").replaceAll("&", "§"));
@@ -157,7 +156,7 @@ public class UseEvent implements Listener {
                     }
                 } catch (ScriptException e) {
                     ap.getLogger().warning("尝试解析 " + name +" §e条件变量或表达式失败，请检查配置！");
-                    if(debug) throw new RuntimeException(e);
+                    if(ConfigManager.debug) throw new RuntimeException(e);
                 }
             }
         }
@@ -189,7 +188,7 @@ public class UseEvent implements Listener {
                 }.runTaskTimer(ap, 0L, 20L);
             }
             if(effects.containsKey("mana")) {
-                if(AttributePotion.skillapi) {
+                if(AttributePotion.Skillapi) {
                     new BukkitRunnable() {
                         final String value = effects.get("mana");
                         final String[] valueArray = value.split(":");
@@ -294,25 +293,20 @@ public class UseEvent implements Listener {
     public static void commandsProcess(Potion potion, Player player) {
         List<String> commands = potion.getCommands();
         if (!commands.isEmpty()) {
-            CommandSender sender = player;
-            boolean console = false;
-            String playerName = player.getName();
+            final String playerName = player.getName();
+            CommandSender sender;
             for (String command : commands) {
                 if (command.startsWith("[console]")) {
-                    console = true;
                     command = command.substring(9).replace("%player%", playerName);
                     sender = Bukkit.getConsoleSender();
-                }
-                if (console) {
-                    Bukkit.dispatchCommand(sender, command);
                 } else {
-                    Bukkit.dispatchCommand(sender, command.replace("%player%", playerName));
+                    sender = player;
                 }
-                sender = player;
-                console = false;
+                Bukkit.dispatchCommand(sender, command);
             }
         }
     }
+
     @EventHandler
     public void onPlayerUsePotion(PlayerInteractEvent event) {
         long startTime = System.currentTimeMillis();
@@ -323,7 +317,7 @@ public class UseEvent implements Listener {
         //识别物品环节
         if(matchItem(item) == null) return;
         String key = matchItem(item);
-        if(debug) {
+        if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             System.out.println("§e 此处断点0消耗的时间：" + elapsedTime + "ms");
@@ -342,7 +336,7 @@ public class UseEvent implements Listener {
         }
         //如果是需要按下shift使用的
         if(potion.isShift() && !player.isSneaking()) return;
-        if(debug) {
+        if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             System.out.println("§e 此处断点1消耗的时间：" + elapsedTime + "ms");
@@ -355,7 +349,7 @@ public class UseEvent implements Listener {
 
         //药水冷却中
         if(isPotionOnCooldown(player, uuid, key, name, potion, useTime)) return;
-        if(debug) {
+        if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             System.out.println("§e 此处断点2消耗的时间：" + elapsedTime + "ms");
@@ -367,7 +361,7 @@ public class UseEvent implements Listener {
 
         //处理effects
         effectsProcess(player, potion);
-        if(debug) {
+        if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             System.out.println("§e 此处断点3消耗的时间：" + elapsedTime + "ms");
@@ -376,7 +370,7 @@ public class UseEvent implements Listener {
         //处理属性lore中的变量与运算并添加属性
         Map<String, Boolean> options = potion.getOptions();
         attributeProcess(player, potion, key, name, options);
-        if(debug) {
+        if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             System.out.println("§e 此处断点4消耗的时间：" + elapsedTime + "ms");
@@ -387,7 +381,7 @@ public class UseEvent implements Listener {
         coolData.put(key, useTime);
         if(group != null) coolData.put(group, useTime);
         ConfigManager.cooldown.put(uuid, coolData);
-        if(debug) {
+        if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             System.out.println("§e 此处断点5消耗的时间：" + elapsedTime + "ms");
@@ -395,15 +389,15 @@ public class UseEvent implements Listener {
 
         //判断是否消耗
         isConsume(potion, item, player, options);
-        if(debug) {
+        if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             System.out.println("§e 此处断点6消耗的时间：" + elapsedTime + "ms");
         }
 
         //处理指令
-
-        if(debug) {
+        commandsProcess(potion, player);
+        if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             System.out.println("§e Vanilla的药水使用事件消耗的时间：" + elapsedTime + "ms");
