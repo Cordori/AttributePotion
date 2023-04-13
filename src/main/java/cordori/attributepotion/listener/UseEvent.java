@@ -5,6 +5,8 @@ import com.sucy.skill.api.enums.ManaSource;
 import com.sucy.skill.api.player.PlayerData;
 import cordori.attributepotion.AttributePotion;
 import cordori.attributepotion.file.ConfigManager;
+import cordori.attributepotion.hook.APHook;
+import cordori.attributepotion.hook.SXHook;
 import cordori.attributepotion.utils.Potion;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
@@ -19,8 +21,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.serverct.ersha.api.AttributeAPI;
-import org.serverct.ersha.attribute.data.AttributeData;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -245,27 +245,21 @@ public class UseEvent implements Listener {
         List<String> attributes = potion.getAttributes();
         if(!attributes.isEmpty()) {
             List<String> attrList = new ArrayList<>(PlaceholderAPI.setPlaceholders(player, attributes));
-            AttributeData data = AttributeAPI.getAttrData(player);
-            if(options.containsKey("clear") && !options.get("clear")) {
-                Bukkit.getScheduler().runTask(ap, () -> AttributeAPI.getAPI().addPersistentSourceAttribute
-                        (data, "AttributePotion_" + key, attrList, time));
+            if(AttributePotion.AttributePlus) {
+                APHook.addAPAttribute(player, options, attrList, key, time);
             } else {
-                AttributeAPI.addSourceAttribute(data, "AttributePotion_" + key, attrList);
-            }
-            player.sendMessage(ConfigManager.prefix + AttributePotion.getInstance().getConfig().getString("messages.usePotion")
-                    .replace("%player%", player.getName())
-                    .replace("%potion%", name)
-                    .replace("%time%", String.valueOf(time))
-                    .replaceAll("&", "§"));
-            if(time == 0) {
-                Bukkit.getScheduler().runTask(ap, () -> AttributeAPI.getAPI().addPersistentSourceAttribute
-                        (data, "AttributePotion_" + key, attrList, -1));
+                SXHook.addSXAttribute(player, key, attrList);
             }
             //到时清除属性源
             if(time>0) {
                 new BukkitRunnable() {
                     public void run() {
-                        AttributeAPI.takeSourceAttribute(data, "AttributePotion_" + key);
+                        if(AttributePotion.AttributePlus) {
+                            APHook.takeAPAttribute(player, key);
+                        } else {
+                            SXHook.takeSXAttribute(player, key);
+                        }
+
                         if (player.isOnline()) {
                             player.sendMessage(ConfigManager.prefix + ap
                                     .getConfig()
@@ -278,6 +272,12 @@ public class UseEvent implements Listener {
                 }.runTaskLaterAsynchronously(ap, time * 20L);
             }
         }
+        player.sendMessage(ConfigManager.prefix + ap.getConfig()
+                .getString("messages.usePotion")
+                .replace("%player%", player.getName())
+                .replace("%potion%", name)
+                .replace("%time%", String.valueOf(time))
+                .replaceAll("&", "§"));
     }
     public static void isConsume(Potion potion, ItemStack item, Player player, Map<String, Boolean> options) {
         if(potion.isConsume()) {
@@ -375,13 +375,15 @@ public class UseEvent implements Listener {
             long elapsedTime = endTime - startTime;
             System.out.println("§e 此处断点4消耗的时间：" + elapsedTime + "ms");
         }
-
         //添加冷却
-        HashMap<String, Long> coolData = new HashMap<>();
-        coolData.put(key, useTime);
-        if(group != null) coolData.put(group, useTime);
-        ConfigManager.cooldown.put(uuid, coolData);
+        if(!ConfigManager.cooldown.containsKey(uuid)) {
+            ConfigManager.cooldown.put(uuid, new HashMap<>());
+        }
+        ConfigManager.cooldown.get(uuid).put(key, useTime);
+        ConfigManager.cooldown.get(uuid).put(group, useTime);
+
         if(ConfigManager.debug) {
+            System.out.println(ConfigManager.cooldown);
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             System.out.println("§e 此处断点5消耗的时间：" + elapsedTime + "ms");
@@ -406,19 +408,8 @@ public class UseEvent implements Listener {
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        Bukkit.getScheduler().runTaskAsynchronously(ap, () -> {
-            AttributeData data = AttributeAPI.getAttrData(event.getPlayer());
-            for(String potionKey : ConfigManager.potionKeys) {
-                Map<String, Boolean> options = ConfigManager.potions.get(potionKey).getOptions();
-                if(!options.isEmpty() && options.containsKey("death")) {
-                    if(options.get("death")) {
-                        AttributeAPI.takeSourceAttribute(data, "AttributePotion_" + potionKey);
-                    }
-                }
-            }
-        });
+        Bukkit.getScheduler().runTaskAsynchronously(ap, () -> APHook.delAPAttribute(event.getPlayer()));
     }
-
 
     private static final Set<String> BLOCKED_MATERIALS = newHashSet(
             "FURNACE", "CHEST", "TRAPPED_CHEST", "BEACON", "DISPENSER", "DROPPER", "HOPPER",

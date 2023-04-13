@@ -3,12 +3,14 @@ author: 'Cordori'
 version: '${project.version}'
 api-version: 1.13
 main: cordori.attributepotion.AttributePotion
-depend:
-  - AttributePlus
+
 softdepend:
+  - AttributePlus
+  - SX-Attribute
   - PlaceholderAPI
   - SkillAPI
   - DragonCore
+
 commands:
   attributepotion:
     permission: admin

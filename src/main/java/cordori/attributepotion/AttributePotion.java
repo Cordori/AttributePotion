@@ -6,6 +6,7 @@ import cordori.attributepotion.hook.PAPIHook;
 import cordori.attributepotion.listener.DCoreUseEvent;
 import cordori.attributepotion.listener.UseEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -16,8 +17,12 @@ import java.nio.file.Files;
 
 public final class AttributePotion extends JavaPlugin {
     private static AttributePotion Instance;
-    public static boolean Skillapi;
-    public static boolean DragonCore;
+    public static boolean Skillapi = false;
+    public static boolean DragonCore = false;
+    public static boolean AttributePlus = false;
+    public static boolean AP3 = false;
+    public static boolean SX3 = false;
+    public static boolean SXAttribute = false;
     public static AttributePotion getInstance() {
         return Instance;
     }
@@ -37,12 +42,31 @@ public final class AttributePotion extends JavaPlugin {
         getLogger().info("§c[属性药水] 已卸载，感谢您的使用~");
     }
     private void checkPlugins() {
-        if (Bukkit.getPluginManager().getPlugin("AttributePlus") != null) {
-            getLogger().info("§6[属性药水]§a已找到AttributePlus插件，插件加载成功！");
-        } else {
-            getLogger().severe("§6[属性药水]§c未找到AttributePlus插件！插件启动失败！");
+        Plugin AP = Bukkit.getPluginManager().getPlugin("AttributePlus");
+        Plugin SX = Bukkit.getPluginManager().getPlugin("SX-Attribute");
+
+        if (AP != null && SX == null) {
+            getLogger().info("§6[属性药水]§a已找到AttributePlus插件，插件将以AP作为默认属性来源！");
+            String version = AP.getDescription().getVersion();
+            if(version.startsWith("3")) AP3 = true;
+            AttributePlus = true;
+        }
+        if(SX != null && AP == null) {
+            getLogger().info("§6[属性药水]§a已找到 SX-Attribute 插件！插件将以SX作为默认属性来源！");
+            String version = SX.getDescription().getVersion();
+            if(version.startsWith("3")) SX3 = true;
+            SXAttribute = true;
+        }
+        if(AP != null && SX != null){
+            getLogger().info("§6[属性药水]§a已找到AttributePlus/SX-Attribute插件，插件将以AP作为默认属性来源！");
+            String version = AP.getDescription().getVersion();
+            if(version.startsWith("3")) AP3 = true;
+            AttributePlus = true;
+        } else if(AP == null && SX == null) {
+            getLogger().severe("§6[属性药水]§c未找到AttributePlus/SX-Attribute插件，插件加载失败！");
             Bukkit.getPluginManager().disablePlugin(this);
         }
+
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             getLogger().info("§6[属性药水]§a已找到PlaceholderAPI插件，可使用变量计算功能！");
             new PAPIHook(this).register();

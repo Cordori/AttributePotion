@@ -56,9 +56,27 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
+      <library name="Maven: org.serverct.ersha.jd:AttributePlus:2.3.7">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/AttributePlus-2.3.7.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
       <library name="Maven: eos.moe.dragoncore:DragonCore:2.6.1.5">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/libs/DragonCore-2.6.1.5.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Maven: github.saukiya.sxattribute:SX-Attribute-3.6.5:3.6.5">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/SX-Attribute-3.6.5.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
