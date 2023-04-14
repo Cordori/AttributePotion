@@ -14,7 +14,6 @@ import java.util.*;
 public class ConfigManager {
     public static boolean debug;
     public static String prefix;
-    public static String plugin;
     public static String identifier;
     public static boolean dragoncore;
     public static AhoCorasickDoubleArrayTrie<String> trie = new AhoCorasickDoubleArrayTrie<>();
@@ -30,17 +29,9 @@ public class ConfigManager {
         ap.reloadConfig();
         debug = ap.getConfig().getBoolean("debug");
         prefix = ap.getConfig().getString("prefix").replaceAll("&","§");
-        plugin = ap.getConfig().getString("plugin");
         identifier = ap.getConfig().getString("identifier");
         dragoncore = ap.getConfig().getBoolean("dragoncore");
         loadGroup(ap);
-        if(plugin.equalsIgnoreCase("AttributePlus")) {
-            AttributePotion.AttributePlus = true;
-            AttributePotion.SXAttribute = false;
-        } else {
-            AttributePotion.SXAttribute = true;
-            AttributePotion.AttributePlus = false;
-        }
         Bukkit.getScheduler().runTaskAsynchronously(ap, () -> loadPotions(ap));
     }
 

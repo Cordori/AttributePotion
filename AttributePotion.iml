@@ -82,6 +82,15 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Maven: github.saukiya.sxattribute:SX-Attribute-2.0.3:2.0.3">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/libs/SX-Attribute-2.0.3.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.ahocorasick:ahocorasick:0.6.3" level="project" />
     <orderEntry type="library" name="Maven: com.hankcs:aho-corasick-double-array-trie:1.2.3" level="project" />
   </component>

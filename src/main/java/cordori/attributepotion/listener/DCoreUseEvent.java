@@ -82,10 +82,12 @@ public class DCoreUseEvent implements Listener {
                         System.out.println("§e 此处断点5消耗的时间：" + elapsedTime + "ms");
                     }
                     //添加冷却
-                    HashMap<String, Long> coolData = new HashMap<>();
-                    coolData.put(key, useTime);
-                    if(group != null) coolData.put(group, useTime);
-                    ConfigManager.cooldown.put(uuid, coolData);
+                    //添加冷却
+                    if(!ConfigManager.cooldown.containsKey(uuid)) {
+                        ConfigManager.cooldown.put(uuid, new HashMap<>());
+                    }
+                    ConfigManager.cooldown.get(uuid).put(key, useTime);
+                    ConfigManager.cooldown.get(uuid).put(group, useTime);
                     //判断是否消耗
                     if(potion.isConsume()) {
                         if (item.getAmount() >= 1) {

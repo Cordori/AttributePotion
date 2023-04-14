@@ -248,7 +248,7 @@ public class UseEvent implements Listener {
             if(AttributePotion.AttributePlus) {
                 APHook.addAPAttribute(player, options, attrList, key, time);
             } else {
-                SXHook.addSXAttribute(player, key, attrList);
+                Bukkit.getScheduler().runTaskAsynchronously(ap, (() -> SXHook.addSXAttribute(player, key, attrList)));
             }
             //到时清除属性源
             if(time>0) {
