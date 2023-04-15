@@ -99,10 +99,12 @@ public final class AttributePotion extends JavaPlugin {
         }
     }
     private void createPotionsFile() throws IOException {
-        File potionsFile = new File(getDataFolder(),"potions.yml");
+        File potionsFolder = new File(getDataFolder(), "potions");
+        if(!potionsFolder.exists()) potionsFolder.mkdirs();
+        File potionsFile = new File(potionsFolder,"示例药水.yml");
         if(!potionsFile.exists()) {
             potionsFile.createNewFile();
-            try (InputStream inputStream = getResource("potions.yml");
+            try (InputStream inputStream = getResource("potions/示例药水.yml");
                  OutputStream outputStream = Files.newOutputStream(potionsFile.toPath())) {
                 byte[] buffer = new byte[1024];
                 int length;

@@ -73,6 +73,13 @@ public class DCoreUseEvent implements Listener {
                         long elapsedTime = endTime - startTime;
                         System.out.println("§e 此处断点4耗的时间：" + elapsedTime + "ms");
                     }
+                    //处理药水效果
+                    UseEvent.potionEffectsProcess(player, potion);
+                    if(ConfigManager.debug) {
+                        long endTime = System.currentTimeMillis();
+                        long elapsedTime = endTime - startTime;
+                        System.out.println("§e 此处断点4消耗的时间：" + elapsedTime + "ms");
+                    }
                     //属性处理
                     Map<String, Boolean> options = potion.getOptions();
                     UseEvent.attributeProcess(player, potion, key, name, options);
@@ -81,7 +88,6 @@ public class DCoreUseEvent implements Listener {
                         long elapsedTime = endTime - startTime;
                         System.out.println("§e 此处断点5消耗的时间：" + elapsedTime + "ms");
                     }
-                    //添加冷却
                     //添加冷却
                     if(!ConfigManager.cooldown.containsKey(uuid)) {
                         ConfigManager.cooldown.put(uuid, new HashMap<>());

@@ -1,6 +1,5 @@
-potions:
-  # 药水节点名，用作识别(必写)
-  测试药水:
+# 药水节点名，用作识别(必写)
+测试药水:
     # 药水的显示名(必写)
     name: '&a测试药水'
     # 识别的lore(必写)
@@ -25,6 +24,10 @@ potions:
       mana: '10:10'
       # 回复饥饿值
       hunger: '2:5'
+    # 原版药水效果
+    potions:
+      # 药水效果: '药水等级:持续时间' ，例如这个是给予1级夜视效果，持续10秒，具体药水效果的英文自行查找
+      NIGHT_VISION: '1:10'
     # 药水添加的属性，格式是 【属性:数值】可以用变量，但不支持运算，你可以用math拓展，变量如果无法解析会出错(可选)
     attributes:
       - '物理伤害:100'
@@ -42,8 +45,8 @@ potions:
       # 是否设置物品冷却。这是原版的那种，较为直观展示冷却时间，但是会导致同类型材料的物品一同进入冷却(可选，默认false)
       cool: false
 
-  # 无注释展示版本
-  生命药水:
+# 无注释展示版本
+生命药水:
     name: '&a生命药水'
     lore: '&e这是一瓶生命药水'
     time: 5
@@ -56,6 +59,8 @@ potions:
       health: '0:0'
       mana: '10:5'
       hunger: '10:5'
+    potions:
+      NIGHT_VISION: '1:10'
     attributes:
       - '生命力:100'
     consume: true
@@ -65,8 +70,8 @@ potions:
       death: false
       cool: false
 
-  # 必填展示版本
-  无用药水:
+# 必填展示版本
+无用药水:
     name: '&b无用药水'
     lore: '&a这是一瓶啥作用都没有的药水'
     time: 1
@@ -79,6 +84,8 @@ potions:
     #  health: '100:20'
     #  mana: '10:10'
     #  hunger: '10:5'
+    #potions:
+    #  NIGHT_VISION: '1:10'
     #attributes:
     #- '物理防御:%player_level%'
     #commands:
@@ -87,7 +94,7 @@ potions:
     #  death: false
     #  cool: false
 
-  巨力药水:
+巨力药水:
     name: '&6巨力药水'
     lore: '&a这是一瓶巨力药水'
     time: 30

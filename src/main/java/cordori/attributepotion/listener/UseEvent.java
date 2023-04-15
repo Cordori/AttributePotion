@@ -20,6 +20,8 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.script.ScriptEngine;
@@ -240,6 +242,18 @@ public class UseEvent implements Listener {
             }
         }
     }
+    public static void potionEffectsProcess(Player player, Potion potion) {
+        Map<String, String> potionEffects = potion.getPotionEffects();
+        if(!potionEffects.isEmpty()) {
+            for (String potionEffect : potionEffects.keySet()) {
+                final String value = potionEffects.get(potionEffect);
+                final String[] valueArray = value.split(":");
+                final int valueA = Integer.parseInt(valueArray[0]);
+                final int valueB = Integer.parseInt(valueArray[1]);
+                new PotionEffect(PotionEffectType.getByName(potionEffect), valueB*20, valueA).apply(player);
+            }
+        }
+    }
     public static void attributeProcess(Player player, Potion potion, String key, String name, Map<String, Boolean> options) {
         int time = potion.getTime();
         List<String> attributes = potion.getAttributes();
@@ -367,13 +381,21 @@ public class UseEvent implements Listener {
             System.out.println("§e 此处断点3消耗的时间：" + elapsedTime + "ms");
         }
 
+        //处理药水效果
+        potionEffectsProcess(player, potion);
+        if(ConfigManager.debug) {
+            long endTime = System.currentTimeMillis();
+            long elapsedTime = endTime - startTime;
+            System.out.println("§e 此处断点4消耗的时间：" + elapsedTime + "ms");
+        }
+
         //处理属性lore中的变量与运算并添加属性
         Map<String, Boolean> options = potion.getOptions();
         attributeProcess(player, potion, key, name, options);
         if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点4消耗的时间：" + elapsedTime + "ms");
+            System.out.println("§e 此处断点5消耗的时间：" + elapsedTime + "ms");
         }
         //添加冷却
         if(!ConfigManager.cooldown.containsKey(uuid)) {
@@ -386,7 +408,7 @@ public class UseEvent implements Listener {
             System.out.println(ConfigManager.cooldown);
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点5消耗的时间：" + elapsedTime + "ms");
+            System.out.println("§e 此处断点6消耗的时间：" + elapsedTime + "ms");
         }
 
         //判断是否消耗
@@ -394,7 +416,7 @@ public class UseEvent implements Listener {
         if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点6消耗的时间：" + elapsedTime + "ms");
+            System.out.println("§e 此处断点7消耗的时间：" + elapsedTime + "ms");
         }
 
         //处理指令

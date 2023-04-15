@@ -32,7 +32,8 @@ public class ConfigManager {
         identifier = ap.getConfig().getString("identifier");
         dragoncore = ap.getConfig().getBoolean("dragoncore");
         loadGroup(ap);
-        Bukkit.getScheduler().runTaskAsynchronously(ap, () -> loadPotions(ap));
+        loadFiles(ap);
+        Bukkit.getScheduler().runTaskAsynchronously(ap, () -> loadFiles(ap));
     }
 
     public static void loadGroup(AttributePotion ap) {
@@ -67,7 +68,6 @@ public class ConfigManager {
             }
         }
     }
-
     public static List<String> colorStringList(List<String> stringList) {
         List<String> colorList = new ArrayList<>();
         for(String list : stringList) colorList.add(list.replaceAll("&", "§"));
@@ -84,44 +84,77 @@ public class ConfigManager {
         }
     }
 
-    public static void loadPotions(AttributePotion ap) {
+    private static void loadFiles(AttributePotion ap) {
         potions.clear();
         potionKeys.clear();
         potionNames.clear();
         potionLores.clear();
-        File file = new File(ap.getDataFolder(), "potions.yml");
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-        Set<String> potionKeys = config.getConfigurationSection("potions").getKeys(false);
+        File potionsFolder = new File(ap.getDataFolder() + "/potions");
+        findAllYmlFiles(ap, potionsFolder);
+        trieBuild(ap);
+        if(debug) {
+            System.out.println(potionNames);
+            System.out.println(potionLores);
+        }
+    }
+
+    private static void findAllYmlFiles(AttributePotion ap, File folder) {
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    // 如果是文件夹则递归查找
+                    findAllYmlFiles(ap, file);
+                } else if (file.getName().endsWith(".yml")) {
+                    // 如果是YML文件则加入结果列表
+                    File potionfile = new File(folder + "/" + file.getName());
+                    YamlConfiguration config = YamlConfiguration.loadConfiguration(potionfile);
+                    loadPotions(config);
+                }
+            }
+        }
+    }
+    private static void loadPotions(YamlConfiguration config) {
+        Set<String> potionKeys = config.getKeys(false);
         for(String potionKey : potionKeys) {
-            String name = config.getString("potions." + potionKey + ".name").replaceAll("[^\\[\\u4e00-\\u9fa5\\]+]", "");
-            String lore = config.getString("potions." + potionKey + ".lore").replaceAll("[^\\[\\u4e00-\\u9fa5\\]+]", "");
-            int time = config.getInt("potions." + potionKey + ".time");
-            int cooldown = config.getInt("potions." + potionKey + ".cooldown");
-            String group = config.getString("potions." + potionKey + ".group");
-            List<String> conditions = config.getStringList("potions." + potionKey + ".conditions");
-            boolean shift = config.getBoolean("potions." + potionKey + ".shift", false);
-            List<String> attributes = colorStringList(config.getStringList("potions." + potionKey + ".attributes"));
-            boolean consume = config.getBoolean("potions." + potionKey + ".consume", true);
-            List<String> commands = config.getStringList("potions." + potionKey + ".commands");
+            String name = config.getString(potionKey + ".name").replaceAll("[^\\[\\u4e00-\\u9fa5\\]+]", "");
+            String lore = config.getString(potionKey + ".lore").replaceAll("[^\\[\\u4e00-\\u9fa5\\]+]", "");
+            int time = config.getInt(potionKey + ".time");
+            int cooldown = config.getInt(potionKey + ".cooldown");
+            String group = config.getString(potionKey + ".group");
+            List<String> conditions = config.getStringList(potionKey + ".conditions");
+            boolean shift = config.getBoolean(potionKey + ".shift", false);
+            List<String> attributes = colorStringList(config.getStringList(potionKey + ".attributes"));
+            boolean consume = config.getBoolean(potionKey + ".consume", true);
+            List<String> commands = config.getStringList(potionKey + ".commands");
 
             Map<String, String> effects = new HashMap<>();
-            if(config.contains("potions." + potionKey + ".effects")) {
-                Set<String> effectKeys = config.getConfigurationSection("potions." + potionKey + ".effects").getKeys(false);
+            if(config.contains(potionKey + ".effects")) {
+                Set<String> effectKeys = config.getConfigurationSection(potionKey + ".effects").getKeys(false);
                 for (String effectKey : effectKeys) {
-                    String value = config.getString("potions." + potionKey + ".effects." + effectKey);
+                    String value = config.getString(potionKey + ".effects." + effectKey);
                     effects.put(effectKey, value);
                 }
             }
 
+            Map<String, String> potionEffects = new HashMap<>();
+            if(config.contains(potionKey + ".potions")) {
+                Set<String> potionEffectsKeys = config.getConfigurationSection(potionKey + ".potions").getKeys(false);
+                for (String potionEffectKey : potionEffectsKeys) {
+                    String value = config.getString(potionKey + ".potions." + potionEffectKey);
+                    potionEffects.put(potionEffectKey, value);
+                }
+            }
+
             Map<String, Boolean> options = new HashMap<>();
-            if(config.contains("potions." + potionKey + ".options")) {
-                Set<String> optionKeys = config.getConfigurationSection("potions." + potionKey + ".options").getKeys(false);
+            if(config.contains(potionKey + ".options")) {
+                Set<String> optionKeys = config.getConfigurationSection(potionKey + ".options").getKeys(false);
                 for (String optionKey : optionKeys) {
-                    boolean value = config.getBoolean("potions." + potionKey + ".options." + optionKey);
+                    boolean value = config.getBoolean(potionKey + ".options." + optionKey);
                     options.put(optionKey, value);
                 }
             }
-            Potion potion = new Potion(potionKey, name, lore, time, cooldown, group, conditions, shift, effects, attributes, consume, commands, options);
+            Potion potion = new Potion(potionKey, name, lore, time, cooldown, group, conditions, shift, effects, potionEffects, attributes, consume, commands, options);
             ConfigManager.potionKeys.add(potionKey);
             potionNames.put(name, potionKey);
             potionLores.put(lore, potionKey);
@@ -138,17 +171,13 @@ public class ConfigManager {
                 System.out.println("§a conditions: " + conditions);
                 System.out.println("§a shift: " + shift);
                 System.out.println("§a effects: " + effects.entrySet());
+                System.out.println("§a potions: " + potionEffects.entrySet());
                 System.out.println("§a attributes: " + attributes);
                 System.out.println("§a consume: " + consume);
                 System.out.println("§a commands: " + commands);
                 System.out.println("§a options: " + options);
                 System.out.println("§6----------------------------");
             }
-        }
-        trieBuild(ap);
-        if(debug) {
-            System.out.println(potionNames);
-            System.out.println(potionLores);
         }
     }
 }

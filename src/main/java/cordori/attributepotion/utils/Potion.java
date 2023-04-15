@@ -14,13 +14,14 @@ public class Potion {
     private final List<String> conditions;
     private final boolean shift;
     private final Map<String, String> effects;
+    private final Map<String, String> potionEffects;
     private final List<String> attributes;
     private final boolean consume;
     private final List<String> commands;
     private final Map<String, Boolean> options;
 
     public Potion(String key, String name, String lore, int time, int cooldown, String group,
-                  List<String> conditions, boolean shift, Map<String, String> effects, List<String> attributes, boolean consume,
+                  List<String> conditions, boolean shift, Map<String, String> effects, Map<String, String> potionEffects, List<String> attributes, boolean consume,
                   List<String> commands, Map<String, Boolean> options) {
         this.key = key;
         this.name = name;
@@ -31,6 +32,7 @@ public class Potion {
         this.conditions = conditions != null ? conditions : Collections.emptyList();
         this.shift = shift;
         this.effects = effects != null ? effects : Collections.emptyMap();
+        this.potionEffects = potionEffects != null ? potionEffects : Collections.emptyMap();
         this.attributes = attributes != null ? attributes : Collections.emptyList();
         this.consume = consume;
         this.commands = commands != null ? commands : Collections.emptyList();
@@ -68,6 +70,9 @@ public class Potion {
 
     public Map<String, String> getEffects() {
         return effects;
+    }
+    public Map<String, String> getPotionEffects() {
+        return potionEffects;
     }
 
     public List<String> getAttributes() {
