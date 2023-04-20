@@ -51,33 +51,6 @@ public class UseEvent implements Listener {
     public static boolean checkItem(ItemStack item) { return item != null && item.getType() != Material.AIR; }
     public static String matchItem(ItemStack item) {
         String key;
-        /*
-        if(ConfigManager.potionKeys.size() <= 50) {
-            if(ConfigManager.identifier.equalsIgnoreCase("name")) {
-                String itemName = item.getItemMeta().getDisplayName();
-                if(itemName == null) return null;
-                for (String name : ConfigManager.potionNames.keySet()) {
-                    if (itemName.contains(name)) {
-                        key = ConfigManager.potionNames.get(name);
-                        return key;
-                    }
-                }
-            }
-            else if(ConfigManager.identifier.equalsIgnoreCase("lore")) {
-                List<String> itemLores = item.getItemMeta().getLore();
-                if(itemLores == null) return null;
-                for(String itemLore : itemLores) {
-                    for(String lore : ConfigManager.potionLores.keySet()) {
-                        if(itemLore.contains(lore)) {
-                            key = ConfigManager.potionLores.get(lore);
-                            return key;
-                        }
-                    }
-                }
-            }
-        } else {
-
-         */
         if(ConfigManager.identifier.equalsIgnoreCase("name")) {
             String text = item.getItemMeta().getDisplayName();
             if (text == null) return null;
@@ -180,7 +153,17 @@ public class UseEvent implements Listener {
                         double health = player.getHealth();
                         double maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
                         if (time > 0) {
-                            player.setHealth(Math.min(health + valueA, maxHealth));
+                            if(valueA>0) {
+                                player.setHealth(Math.min(health + valueA, maxHealth));
+                            } else {
+                                if(health + valueA <= 0) {
+                                    player.setHealth(0);
+                                    cancel();
+                                } else {
+                                    player.setHealth(health + valueA);
+
+                                }
+                            }
                             time--;
                         }
                         if (time == 0) {
@@ -261,7 +244,7 @@ public class UseEvent implements Listener {
             List<String> attrList = new ArrayList<>(PlaceholderAPI.setPlaceholders(player, attributes));
             if(AttributePotion.AttributePlus) {
                 APHook.addAPAttribute(player, options, attrList, key, time);
-            } else {
+            } else if(AttributePotion.SXAttribute){
                 Bukkit.getScheduler().runTaskAsynchronously(ap, (() -> SXHook.addSXAttribute(player, key, attrList)));
             }
             //到时清除属性源
@@ -270,7 +253,7 @@ public class UseEvent implements Listener {
                     public void run() {
                         if(AttributePotion.AttributePlus) {
                             APHook.takeAPAttribute(player, key);
-                        } else {
+                        } else if(AttributePotion.SXAttribute){
                             SXHook.takeSXAttribute(player, key);
                         }
 
@@ -430,7 +413,9 @@ public class UseEvent implements Listener {
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        Bukkit.getScheduler().runTaskAsynchronously(ap, () -> APHook.delAPAttribute(event.getPlayer()));
+        if(AttributePotion.AttributePlus) {
+            Bukkit.getScheduler().runTaskAsynchronously(ap, () -> APHook.delAPAttribute(event.getPlayer()));
+        }
     }
 
     private static final Set<String> BLOCKED_MATERIALS = newHashSet(

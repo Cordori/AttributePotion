@@ -90,7 +90,7 @@ public class ConfigManager {
         potionNames.clear();
         potionLores.clear();
         File potionsFolder = new File(ap.getDataFolder() + "/potions");
-        findAllYmlFiles(ap, potionsFolder);
+        findAllYmlFiles(potionsFolder);
         trieBuild(ap);
         if(debug) {
             System.out.println(potionNames);
@@ -98,13 +98,13 @@ public class ConfigManager {
         }
     }
 
-    private static void findAllYmlFiles(AttributePotion ap, File folder) {
+    private static void findAllYmlFiles(File folder) {
         File[] files = folder.listFiles();
         if (files != null) {
             for (File file : files) {
                 if (file.isDirectory()) {
                     // 如果是文件夹则递归查找
-                    findAllYmlFiles(ap, file);
+                    findAllYmlFiles(file);
                 } else if (file.getName().endsWith(".yml")) {
                     // 如果是YML文件则加入结果列表
                     File potionfile = new File(folder + "/" + file.getName());
