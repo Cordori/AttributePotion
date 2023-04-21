@@ -16,6 +16,12 @@
       - 'permission:vip'
     # 是否需要按住shift使用(可选，默认为false，即不需要)
     shift: false
+    # LEFT_CLICK_AIR 左击空气
+    # LEFT_CLICK_BLOCK 左击一个方块
+    # RIGHT_CLICK_AIR 右击空气
+    # RIGHT_CLICK_BLOCK 右击一个方块
+    triggers:
+      - 'LEFT_CLICK_AIR'
     # 使用后的效果(可选)
     effects:
       # 回复生命值，前面是每秒回复血量，后面是回复的持续时间，写1表示立即回复
@@ -32,8 +38,8 @@
     attributes:
       - '物理伤害:100'
       - '生命力:%player_level%'
-    # 使用后是否消耗(可选,不写的话默认是true)
-    consume: true
+    # 使用次数，0表示不消耗
+    count: 0
     # 使用药水后执行的指令，console表示以控制台执行，不写表示玩家身份执行(可选) [注：不支持op执行]
     commands:
       - '[console]give %player% apple'
