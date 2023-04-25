@@ -79,6 +79,7 @@ public class UseEvent implements Listener {
             }
         }
         if(lastGroupTime != 0) {
+            if(ConfigManager.group.get(group) == null) return false;
             int groupCooldown = ConfigManager.group.get(group);
             if((useTime - lastGroupTime) / 1000 <= groupCooldown) {
                 player.sendMessage(ConfigManager.prefix + ap.getConfig()
@@ -112,7 +113,7 @@ public class UseEvent implements Listener {
         return false;
     }
     public static boolean checkConditions(List<String> conditions, Player player, String name) {
-        if(conditions.isEmpty()) return true;
+        if(conditions.isEmpty()) return false;
         for (String condition : conditions) {
             if (condition.contains("permission:")) {
                 condition = condition.substring(10);
