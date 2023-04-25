@@ -36,16 +36,16 @@ public class UseEvent implements Listener {
     private static final ScriptEngineManager mgr = new ScriptEngineManager();
     private static final ScriptEngine engine = mgr.getEngineByName("nashorn");
 
-    /*
-    判断动作是否符合
-    判断药水组是否冷却中
-    判断药水是否冷却中
-    判断条件是否满足
-    添加属性并记录冷却时间
-    执行effects内容
-    判断是否消耗
-    设置物品冷却
-    执行指令
+    /**
+    *判断动作是否符合
+    *判断药水组是否冷却中
+    *判断药水是否冷却中
+    *判断条件是否满足
+    *添加属性并记录冷却时间
+    *执行effects内容
+    *判断是否消耗
+    *设置物品冷却
+    *执行指令
     */
 
     public static boolean checkItem(ItemStack item) { return item != null && item.getType() != Material.AIR; }

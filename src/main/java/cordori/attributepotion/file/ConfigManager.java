@@ -117,8 +117,8 @@ public class ConfigManager {
     private static void loadPotions(YamlConfiguration config) {
         Set<String> potionKeys = config.getKeys(false);
         for(String potionKey : potionKeys) {
-            String name = config.getString(potionKey + ".name").replaceAll("[^\\[\\u4e00-\\u9fa5\\]+]", "");
-            String lore = config.getString(potionKey + ".lore").replaceAll("[^\\[\\u4e00-\\u9fa5\\]+]", "");
+            String name = config.getString(potionKey + ".name").replaceAll("[&§]\\w", "");
+            String lore = config.getString(potionKey + ".lore").replaceAll("[&§]\\w", "");
             int time = config.getInt(potionKey + ".time");
             int cooldown = config.getInt(potionKey + ".cooldown");
             String group = config.getString(potionKey + ".group");
