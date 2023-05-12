@@ -12,22 +12,16 @@ import java.util.Map;
 
 public class APHook {
 
-    public static void addAPAttribute(Player player, Map<String, Boolean> options, List<String> attrList, String key, int time) {
+    public static void addAPAttribute(Player player, List<String> attrList, String key) {
         if(AttributePotion.AP3) {
             AttributeData APdata = AttributeAPI.getAttrData(player);
-            if(options.containsKey("clear") && !options.get("clear")) {
-                AttributeAPI.getAPI().addPersistentSourceAttribute(APdata, "AttributePotion_" + key, attrList, time);
-            } else {
-                AttributeAPI.addSourceAttribute(APdata, "AttributePotion_" + key, attrList);
-            }
-            if(time == 0) {
-                AttributeAPI.getAPI().addPersistentSourceAttribute(APdata, "AttributePotion_" + key, attrList, -1);
-            }
+            AttributeAPI.addSourceAttribute(APdata, "AttributePotion_" + key, attrList);
         } else {
             EntityAttributeAPI.addEntityAttribute(player, "AttributePotion_" + key, attrList);
         }
 
     }
+
     public static void takeAPAttribute(Player player, String key) {
         if(AttributePotion.AP3) {
             AttributeData APdata = AttributeAPI.getAttrData(player);
@@ -36,6 +30,7 @@ public class APHook {
             EntityAttributeAPI.removeEntityAttribute(player, "AttributePotion_" + key);
         }
     }
+
     public static void delAPAttribute(Player player) {
         AttributeData data = AttributeAPI.getAttrData(player);
         for(String potionKey : ConfigManager.potionKeys) {

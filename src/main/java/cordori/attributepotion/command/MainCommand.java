@@ -11,11 +11,15 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 
 public class MainCommand implements CommandExecutor, TabCompleter {
+
     private static final AttributePotion ap = AttributePotion.getInstance();
+
     private List<String> filter(List<String> list, String latest) {
         if (list.isEmpty() || latest == null)
             return list;
@@ -50,107 +54,86 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(args.length == 0) {
-            sender.sendMessage(ConfigManager.prefix + "§c参数不足捏~");
-            return false;
-        }
 
-        if(args[0].equalsIgnoreCase("reload")) {
-            ConfigManager.reloadMyConfig();
-            sender.sendMessage(ConfigManager.prefix + ap.getConfig().getString("messages.reload").replaceAll("&","§"));
-            return true;
-        } else if (args[0].equalsIgnoreCase("addPotion")) {
-            if(args.length <= 2) {
+        Bukkit.getScheduler().runTaskAsynchronously(ap, () -> {
+
+            if(args.length == 0) {
                 sender.sendMessage(ConfigManager.prefix + "§c参数不足捏~");
-                return false;
+                return;
             }
 
-            String playerName = args[1];
-            Player player = Bukkit.getPlayer(playerName);
-            if (player == null) {
-                sender.sendMessage(ConfigManager.prefix + "§c该玩家不在线！");
-                return false;
+            if(args[0].equalsIgnoreCase("reload")) {
+
+                ConfigManager.reloadMyConfig();
+                if(ConfigManager.messagesHashMap.containsKey("reload")) {
+                    sender.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("reload"));
+                }
+
             }
 
-            String potionKey = args[2];
-            if (!ConfigManager.potionKeys.contains(potionKey)) {
-                sender.sendMessage(ConfigManager.prefix + "§c无效的药水节点名！");
-                return false;
-            }
+            else if (args[0].equalsIgnoreCase("addPotion")) {
 
-            long startTime = System.currentTimeMillis();
-            commandUsePotion(player, potionKey, startTime);
-            return true;
-        } else {
-            sender.sendMessage(ConfigManager.prefix + "§c无效的指令！");
-            return false;
-        }
+                if(args.length <= 2) {
+                    sender.sendMessage(ConfigManager.prefix + "§c参数不足捏~");
+                    return;
+                }
+
+                String playerName = args[1];
+                Player player = Bukkit.getPlayer(playerName);
+                if (player == null) {
+                    sender.sendMessage(ConfigManager.prefix + "§c该玩家不在线！");
+                    return;
+                }
+
+                String potionKey = args[2];
+                if (!ConfigManager.potionKeys.contains(potionKey)) {
+                    sender.sendMessage(ConfigManager.prefix + "§c无效的药水节点名！");
+                    return;
+                }
+
+                long startTime = System.currentTimeMillis();
+                commandUsePotion(player, potionKey, startTime);
+
+            } else {
+                sender.sendMessage(ConfigManager.prefix + "§c无效的指令！");
+            }
+        });
+
+        return false;
     }
 
     private static void commandUsePotion(Player player, String key, long startTime) {
+
         Potion potion = ConfigManager.potions.get(key);
-        if(potion.isShift() && !player.isSneaking()) return;
         String name = potion.getName();
         String group = potion.getGroup();
         UUID uuid = player.getUniqueId();
         long useTime = System.currentTimeMillis();
-        if(ConfigManager.debug) {
-            long endTime = System.currentTimeMillis();
-            long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点0消耗的时间：" + elapsedTime + "ms");
-        }
+
         //药水组冷却判断
         if(UseEvent.isGroupOnCooldown(player, uuid, group, useTime)) return;
-        if(ConfigManager.debug) {
-            long endTime = System.currentTimeMillis();
-            long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点1消耗的时间：" + elapsedTime + "ms");
-        }
+
         //药水条件判断
         if(UseEvent.isPotionOnCooldown(player, uuid, key, name, potion, useTime)) return;
-        if(ConfigManager.debug) {
-            long endTime = System.currentTimeMillis();
-            long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点2消耗的时间：" + elapsedTime + "ms");
-        }
+
         //条件判断
-        List<String> conditions = potion.getConditions();
-        if(UseEvent.checkConditions(conditions, player, name)) return;
-        if(ConfigManager.debug) {
-            long endTime = System.currentTimeMillis();
-            long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点3消耗的时间：" + elapsedTime + "ms");
-        }
-        //effects效果处理
-        UseEvent.effectsProcess(player, potion);
-        if(ConfigManager.debug) {
-            long endTime = System.currentTimeMillis();
-            long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点4耗的时间：" + elapsedTime + "ms");
-        }
+        if(UseEvent.meetConditions(potion.getConditions(), player, name)) return;
+
         //处理药水效果
         UseEvent.potionEffectsProcess(player, potion);
-        if(ConfigManager.debug) {
-            long endTime = System.currentTimeMillis();
-            long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点4消耗的时间：" + elapsedTime + "ms");
-        }
-        //属性处理
-        Map<String, Boolean> options = potion.getOptions();
-        UseEvent.attributeProcess(player, potion, key, name, options);
-        if(ConfigManager.debug) {
-            long endTime = System.currentTimeMillis();
-            long elapsedTime = endTime - startTime;
-            System.out.println("§e 此处断点5消耗的时间：" + elapsedTime + "ms");
-        }
-        //添加冷却
-        if(!ConfigManager.cooldown.containsKey(uuid)) {
-            ConfigManager.cooldown.put(uuid, new HashMap<>());
-        }
-        ConfigManager.cooldown.get(uuid).put(key, useTime);
-        ConfigManager.cooldown.get(uuid).put(group, useTime);
+
+        // 处理属性
+        UseEvent.attributeProcess(player, potion.getTime(), key, name, potion.getAttributes(), useTime, group);
+
+        //effects效果处理
+        UseEvent.effectsProcess(player, potion);
+
+        ConfigManager.playerUseTime.get(uuid).put(key, useTime);
+        ConfigManager.playerUseTime.get(uuid).put(group, useTime);
+
         //处理指令
         UseEvent.commandsProcess(potion, player);
+
         if(ConfigManager.debug) {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;

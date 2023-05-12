@@ -4,10 +4,25 @@ debug: false
 # 消息前缀
 prefix: "&6[属性药水]"
 
+# 数据存储模式，SQLite 或 MySQL ，改了请重启
+database: 'SQLite'
+
+# 数据库设置
+MySQL:
+  host: localhost
+  port: 3306
+  username: root
+  password: root
+  table: AttributePotion
+  # MySQL5 使用: com.mysql.jdbc.Driver
+  # MySQL8 使用: com.mysql.cj.jdbc.Driver
+  driver: 'com.mysql.jdbc.Driver'
+  jdbc: '?useSSL=false&useUnicode=true&characterEncoding=utf8'
+
 # 用什么识别药水，name表示药水名，lore表示药水的lore，模糊匹配
 identifier: 'name'
 
-# 是否启用龙核兼容
+# 是否启用龙核兼容，修改之后需要重启
 dragoncore: false
 
 # 按键及对应的槽位
@@ -29,5 +44,5 @@ messages:
   usePotion: "&a成功为玩家&6 %player% &a添加 %potion% &a效果，持续&e %time% &a秒"
   useDeny: "&c您不满足该药水的使用条件！"
   outPotion: "%potion% &5效果已结束！"
-  onPotionCooldown: "%potion% &7冷却中，剩余&e %cooldown% &7秒"
+  onPotionCooldown: "&b%potion% &7冷却中，剩余&e %cooldown% &7秒"
   onGroupCooldown: "&b%group% &7冷却中，剩余&e %cooldown% &7秒"

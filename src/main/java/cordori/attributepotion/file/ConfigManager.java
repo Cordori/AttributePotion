@@ -4,7 +4,6 @@ import com.hankcs.algorithm.AhoCorasickDoubleArrayTrie;
 import cordori.attributepotion.AttributePotion;
 import cordori.attributepotion.utils.Potion;
 import eos.moe.dragoncore.api.CoreAPI;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -12,6 +11,7 @@ import java.io.File;
 import java.util.*;
 
 public class ConfigManager {
+    public static AttributePotion ap;
     public static boolean debug;
     public static String prefix;
     public static String identifier;
@@ -19,24 +19,24 @@ public class ConfigManager {
     public static AhoCorasickDoubleArrayTrie<String> trie = new AhoCorasickDoubleArrayTrie<>();
     public static HashMap<String, String> coreKeys = new HashMap<>();
     public static HashMap<String, Integer> group = new HashMap<>();
-    public static HashMap<UUID, HashMap<String, Long>> cooldown = new HashMap<>();
+    public static HashMap<UUID, HashMap<String, Long>> playerUseTime = new HashMap<>();
     public static List<String> potionKeys = new ArrayList<>();
     public static HashMap<String, String> potionNames = new HashMap<>();
     public static HashMap<String, String> potionLores = new HashMap<>();
     public static Map<String, Potion> potions = new HashMap<>();
+    public static HashMap<String, String> messagesHashMap = new HashMap<>();
+
     public static void reloadMyConfig() {
-        AttributePotion ap = AttributePotion.getInstance();
         ap.reloadConfig();
         debug = ap.getConfig().getBoolean("debug");
         prefix = ap.getConfig().getString("prefix").replaceAll("&","§");
         identifier = ap.getConfig().getString("identifier");
         dragoncore = ap.getConfig().getBoolean("dragoncore");
-        loadGroup(ap);
-        loadFiles(ap);
-        Bukkit.getScheduler().runTaskAsynchronously(ap, () -> loadFiles(ap));
+        loadGroup();
+        loadFiles();
     }
 
-    public static void loadGroup(AttributePotion ap) {
+    public static void loadGroup() {
         File file = new File(ap.getDataFolder(), "config.yml");
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
         Set<String> groupKeys = config.getConfigurationSection("group").getKeys(false);
@@ -68,13 +68,15 @@ public class ConfigManager {
             }
         }
     }
+
     public static List<String> colorStringList(List<String> stringList) {
         List<String> colorList = new ArrayList<>();
         for(String list : stringList) colorList.add(list.replaceAll("&", "§"));
         return colorList;
 
     }
-    public static void trieBuild(AttributePotion ap) {
+
+    public static void trieBuild() {
         File file = new File(ap.getDataFolder(), "config.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
         if (config.getString("identifier").equalsIgnoreCase("name")) {
@@ -84,17 +86,29 @@ public class ConfigManager {
         }
     }
 
-    private static void loadFiles(AttributePotion ap) {
+    private static void loadFiles() {
         potions.clear();
         potionKeys.clear();
         potionNames.clear();
         potionLores.clear();
+        messagesHashMap.clear();
         File potionsFolder = new File(ap.getDataFolder() + "/potions");
         findAllYmlFiles(potionsFolder);
-        trieBuild(ap);
-        if(debug) {
-            System.out.println(potionNames);
-            System.out.println(potionLores);
+        trieBuild();
+        loadMessages();
+    }
+
+    private static void loadMessages() {
+        File file = new File(ap.getDataFolder(), "config.yml");
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        Set<String> messages = config.getConfigurationSection("messages").getKeys(false);
+        for(String key : messages) {
+            String msg = config.getString("messages." + key).replaceAll("&", "§");
+            if(msg.equals("")) continue;
+            messagesHashMap.put(key, msg);
+            if(debug) {
+                System.out.println("§a " + key + "信息为: " + msg);
+            }
         }
     }
 
@@ -114,8 +128,11 @@ public class ConfigManager {
             }
         }
     }
+
     private static void loadPotions(YamlConfiguration config) {
+
         Set<String> potionKeys = config.getKeys(false);
+
         for(String potionKey : potionKeys) {
             String name = config.getString(potionKey + ".name").replaceAll("[&§]\\w", "");
             String lore = config.getString(potionKey + ".lore").replaceAll("[&§]\\w", "");
@@ -154,6 +171,7 @@ public class ConfigManager {
                     options.put(optionKey, value);
                 }
             }
+
             Potion potion = new Potion(potionKey, name, lore, time, cooldown, group, conditions, shift, effects, potionEffects, attributes, consume, commands, options);
             ConfigManager.potionKeys.add(potionKey);
             potionNames.put(name, potionKey);

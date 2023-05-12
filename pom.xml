@@ -6,7 +6,7 @@
 
     <groupId>cordori</groupId>
     <artifactId>AttributePotion</artifactId>
-    <version>1.3.3</version>
+    <version>1.4.0</version>
     <packaging>jar</packaging>
 
     <name>AttributePotion</name>
@@ -70,12 +70,14 @@
     </repositories>
 
     <dependencies>
+
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>1.12.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>com.sucy.skill</groupId>
             <artifactId>SkillAPI</artifactId>
@@ -83,6 +85,7 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/SkillAPI-1.90.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>me.clip.placeholderapi</groupId>
             <artifactId>PlaceholderAPI</artifactId>
@@ -90,6 +93,7 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/PlaceholderAPI-2.11.1.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>org.serverct.ersha</groupId>
             <artifactId>AttributePlus</artifactId>
@@ -97,6 +101,7 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/AttributePlus-3.3.0.9.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>org.serverct.ersha.jd</groupId>
             <artifactId>AttributePlus</artifactId>
@@ -104,6 +109,7 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/AttributePlus-2.3.7.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>eos.moe.dragoncore</groupId>
             <artifactId>DragonCore</artifactId>
@@ -111,6 +117,7 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/DragonCore-2.6.1.5.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>github.saukiya.sxattribute</groupId>
             <artifactId>SX-Attribute-3.6.5</artifactId>
@@ -118,6 +125,7 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/SX-Attribute-3.6.5.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>github.saukiya.sxattribute</groupId>
             <artifactId>SX-Attribute-2.0.3</artifactId>
@@ -125,16 +133,32 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/SX-Attribute-2.0.3.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>org.ahocorasick</groupId>
             <artifactId>ahocorasick</artifactId>
             <version>0.6.3</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>com.hankcs</groupId>
             <artifactId>aho-corasick-double-array-trie</artifactId>
             <version>1.2.3</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-dbcp2</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.26</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 </project>

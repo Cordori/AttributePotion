@@ -3,6 +3,7 @@ package cordori.attributepotion.hook;
 import cordori.attributepotion.AttributePotion;
 import cordori.attributepotion.file.ConfigManager;
 import cordori.attributepotion.utils.Potion;
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 
@@ -15,7 +16,7 @@ public class PAPIHook extends PlaceholderExpansion {
     private final AttributePotion ap;
     private List<String> potionKeys = ConfigManager.potionKeys;
     private Map<String, Potion> potions = ConfigManager.potions;
-    private HashMap<UUID, HashMap<String, Long>> cooldown = ConfigManager.cooldown;
+    private HashMap<UUID, HashMap<String, Long>> cooldown = ConfigManager.playerUseTime;
     public PAPIHook(AttributePotion ap) {
         this.ap = ap;
     }
@@ -41,6 +42,9 @@ public class PAPIHook extends PlaceholderExpansion {
         return "AttributePotion";
     }
 
+    public static List<String> papiProcess(Player player, List<String> stringList) {
+        return PlaceholderAPI.setPlaceholders(player, stringList);
+    }
     @Override
     public String onPlaceholderRequest(Player player, String identifier) {
         if (player == null || identifier == null || identifier.isEmpty()) {

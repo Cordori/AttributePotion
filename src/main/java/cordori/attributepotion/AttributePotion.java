@@ -2,6 +2,7 @@ package cordori.attributepotion;
 
 import cordori.attributepotion.command.MainCommand;
 import cordori.attributepotion.file.ConfigManager;
+import cordori.attributepotion.file.SQLManager;
 import cordori.attributepotion.hook.PAPIHook;
 import cordori.attributepotion.hook.SXHook;
 import cordori.attributepotion.listener.DCoreUseEvent;
@@ -25,6 +26,7 @@ public final class AttributePotion extends JavaPlugin {
     public static boolean AP3 = false;
     public static boolean SX3 = false;
     public static boolean SXAttribute = false;
+
     public static AttributePotion getInstance() {
         return Instance;
     }
@@ -32,8 +34,11 @@ public final class AttributePotion extends JavaPlugin {
     public void onEnable() {
         checkPlugins();
         Instance = this;
+        ConfigManager.ap = this;
         createFile();
         ConfigManager.reloadMyConfig();
+        if(getConfig().getString("database").equalsIgnoreCase("MySQL")) SQLManager.MySQL = true;
+        loadSQL();
         Bukkit.getPluginCommand(("attributepotion")).setExecutor(new MainCommand());
         Bukkit.getPluginManager().registerEvents(new UseEvent(), this);
         getLogger().info("§a[属性药水] 插件加载成功！");
@@ -41,22 +46,26 @@ public final class AttributePotion extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if(SQLManager.sql != null) SQLManager.sql.disconnect();
         getLogger().info("§c[属性药水] 已卸载，感谢您的使用~");
     }
+
     private void checkPlugins() {
+
         Plugin AP = Bukkit.getPluginManager().getPlugin("AttributePlus");
         Plugin SX = Bukkit.getPluginManager().getPlugin("SX-Attribute");
 
         if (AP != null && SX == null) {
             AttributePlus = true;
             String version = AP.getDescription().getVersion();
-            if(version.startsWith("3")) AP3 = true;
+            if (version.startsWith("3")) AP3 = true;
             getLogger().info("§6[属性药水]§a已找到AttributePlus插件，插件将以AP作为默认属性来源！AP版本: " + version);
         }
-        if(SX != null && AP == null) {
+
+        if (SX != null && AP == null) {
             SXAttribute = true;
             String version = SX.getDescription().getVersion();
-            if(version.startsWith("3")) SX3 = true;
+            if (version.startsWith("3")) SX3 = true;
             try {
                 SXHook.setSXMethod();
             } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException e) {
@@ -64,12 +73,15 @@ public final class AttributePotion extends JavaPlugin {
             }
             getLogger().info("§6[属性药水]§a已找到 SX-Attribute 插件！插件将以SX作为默认属性来源！SX版本: " + version);
         }
-        if(AP != null && SX != null){
+
+        if (AP != null && SX != null) {
             AttributePlus = true;
             String version = AP.getDescription().getVersion();
-            if(version.startsWith("3")) AP3 = true;
-            getLogger().info("§6[属性药水]§a已找到AttributePlus/SX-Attribute插件，插件将以AP作为默认属性来源！AP版本: " + version);
-        } else if(AP == null && SX == null) {
+            if (version.startsWith("3")) AP3 = true;
+            getLogger().info("§6[属性药水]§a已找到AttributePlus插件，插件将以AP作为默认属性来源！AP版本: " + version);
+        }
+
+        if (AP == null && SX == null) {
             getLogger().warning("§6[属性药水]§e未找到AttributePlus/SX-Attribute插件，无法使用属性功能！");
         }
 
@@ -79,31 +91,38 @@ public final class AttributePotion extends JavaPlugin {
         } else {
             getLogger().warning("§6[属性药水]§e未找到PAPI插件，无法使用本插件变量与变量计算功能！");
         }
+
         if(Bukkit.getPluginManager().getPlugin("SkillAPI") != null) {
             getLogger().info("§6[属性药水]§6已找到SkillAPI插件，可使用回复Mana功能！");
             Skillapi = true;
         } else {
             getLogger().warning("§6[属性药水]§e未找到SkillAPI插件，无法使用回复Mana功能！");
         }
+
         if(Bukkit.getPluginManager().getPlugin("DragonCore") != null) {
             getLogger().info("§6[属性药水]§a已找到DragonCore插件，可启用龙核按键使用药水！");
-            Bukkit.getPluginManager().registerEvents(new DCoreUseEvent(), this);
-            DragonCore = true;
+            if(getConfig().getBoolean("dragoncore")) {
+                Bukkit.getPluginManager().registerEvents(new DCoreUseEvent(), this);
+                DragonCore = true;
+            }
         } else {
             getLogger().warning("§6[属性药水]§e未找到DragonCore插件，无法启用龙核按键使用药水！");
         }
+
     }
+
     private void createFile() {
         if (!getDataFolder().exists()) {
             getDataFolder().mkdirs();
-        }
-        saveDefaultConfig();
-        try {
-            createPotionsFile();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            saveDefaultConfig();
+            try {
+                createPotionsFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
+
     private void createPotionsFile() throws IOException {
         File potionsFolder = new File(getDataFolder(), "potions");
         if(!potionsFolder.exists()) potionsFolder.mkdirs();
@@ -119,5 +138,28 @@ public final class AttributePotion extends JavaPlugin {
                 }
             }
         }
+    }
+
+    private void loadSQL() {
+        String host = getConfig().getString("MySQL.host");
+        String port = getConfig().getString("MySQL.port");
+        String username = getConfig().getString("MySQL.username");
+        String password = getConfig().getString("MySQL.password");
+        String table = getConfig().getString("MySQL.table");
+        String driver;
+        driver = getConfig().getString("MySQL.driver");
+        String jdbc = getConfig().getString("MySQL.jdbc");
+        String sqlString;
+
+        if(SQLManager.MySQL) {
+            sqlString = "jdbc:mysql://" + host + ":" + port + "/" + table + jdbc;
+        } else {
+            driver = "org.sqlite.JDBC";
+            sqlString = "jdbc:sqlite:" + getDataFolder().toPath().resolve("database.db");
+        }
+
+        SQLManager.sql = new SQLManager(sqlString, username, password, driver);
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> SQLManager.sql.createTable());
+
     }
 }

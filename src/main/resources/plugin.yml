@@ -3,6 +3,7 @@ author: 'Cordori'
 version: '${project.version}'
 api-version: 1.13
 main: cordori.attributepotion.AttributePotion
+description: 'A potion plugin that provides you with attributes or other features.'
 
 softdepend:
   - AttributePlus
