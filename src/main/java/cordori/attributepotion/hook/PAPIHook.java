@@ -47,14 +47,14 @@ public class PAPIHook extends PlaceholderExpansion {
     }
     @Override
     public String onPlaceholderRequest(Player player, String identifier) {
-        if (player == null || identifier == null || identifier.isEmpty()) {
-            return "";
-        }
+        if (player == null || identifier == null || identifier.isEmpty()) return null;
+
         long useTime = System.currentTimeMillis();
         long lastPotionTime = 0;
         UUID uuid = player.getUniqueId();
         for (String key : potionKeys) {
-            if (identifier.equalsIgnoreCase(key + "_cooldown")) {
+
+            if (identifier.equalsIgnoreCase("count_" + key)) {
                 int time = potions.get(key).getTime();
                 if (!cooldown.isEmpty() && cooldown.containsKey(uuid) && cooldown.get(uuid).containsKey(key)) {
                     lastPotionTime = cooldown.get(uuid).get(key);
@@ -63,6 +63,21 @@ public class PAPIHook extends PlaceholderExpansion {
                     return String.valueOf(time - (useTime - lastPotionTime) / 1000);
                 }
             }
+
+            if (identifier.equalsIgnoreCase("cooldown_" + key)) {
+                int cooldown = potions.get(key).getCooldown();
+                return String.valueOf(cooldown);
+            }
+
+            if (identifier.equalsIgnoreCase("time_" + key)) {
+                int time = potions.get(key).getTime();
+                return String.valueOf(time);
+            }
+
+            if (identifier.equalsIgnoreCase("group_" + key)) {
+                return potions.get(key).getGroup();
+            }
+
         }
         return "0";
     }

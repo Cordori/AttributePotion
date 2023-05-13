@@ -194,10 +194,8 @@ public class UseEvent implements Listener {
                                         break;
                                     case "2":
                                         player.setHealth(Math.min(health + maxHealth * valueA / 100, maxHealth));
-
                                         break;
                                 }
-                                System.out.println(player.getHealth());
 
                             } else {
                                 // 比如-10:5,每秒扣除当前生命的10%
@@ -329,11 +327,11 @@ public class UseEvent implements Listener {
             SXHook.addSXAttribute(player);
         }
 
-        // 插入数据到数据库
-        SQLManager.sql.insert(String.valueOf(uuid), key, attrList, useTime, group);
-
         // 到时清除属性源
         if(time>0) {
+            // 插入数据到数据库
+            SQLManager.sql.insert(String.valueOf(uuid), key, attrList, useTime, group);
+
             Bukkit.getScheduler().runTaskLaterAsynchronously(ap, () -> {
 
                 attributeMap.computeIfPresent(uuid, (k, attrMap) -> {
@@ -359,6 +357,8 @@ public class UseEvent implements Listener {
                     }
                 }
             }, time * 20L);
+        } else {
+            SQLManager.sql.insert(String.valueOf(uuid), key, attrList, -1L, group);
         }
 
         if(ConfigManager.messagesHashMap.containsKey("usePotion")) {
@@ -564,9 +564,22 @@ public class UseEvent implements Listener {
                 int time = ConfigManager.potions.get(key).getTime();
 
                 if(ConfigManager.debug) {
-                    System.out.println(str);
+                    System.out.println("§6----------------------------");
+                    System.out.println(key);
                     System.out.println(attrList);
                     System.out.println(group);
+                    System.out.println(lastTime);
+                    System.out.println("§6----------------------------");
+                }
+
+                if(lastTime == -1L) {
+                    attributeMap.computeIfAbsent(uuid, k -> new HashMap<>()).put(key, attrList);
+                    if(AttributePotion.AttributePlus) {
+                        APHook.addAPAttribute(player, attrList, key);
+                    } else if(AttributePotion.SXAttribute){
+                        SXHook.addSXAttribute(player);
+                    }
+                    continue;
                 }
 
                 if(currentTime - lastTime < time * 1000L) {

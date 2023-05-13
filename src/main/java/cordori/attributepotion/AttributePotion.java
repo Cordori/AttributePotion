@@ -47,6 +47,7 @@ public final class AttributePotion extends JavaPlugin {
     @Override
     public void onDisable() {
         if(SQLManager.sql != null) SQLManager.sql.disconnect();
+        Bukkit.getScheduler().cancelTasks(this);
         getLogger().info("§c[属性药水] 已卸载，感谢您的使用~");
     }
 
