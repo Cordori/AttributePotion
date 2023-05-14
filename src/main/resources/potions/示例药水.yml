@@ -48,6 +48,10 @@
     commands:
       - '[console]give %player% apple'
       - 'spawn'
+    # 药水结束后执行的指令
+    endCommands:
+      - '[console]give %player% diamond'
+      - 'say 药水效果结束了'
     # 其他设置
     options:
       # 死亡后是否清除药水属性，false表示否(可选，默认false)
@@ -79,6 +83,9 @@
     consume: true
     commands:
       - 'say 我使用了一瓶生命药水~'
+    endCommands:
+      - '[console]give %player% diamond'
+      - 'say 药水效果结束了'
     options:
       death: false
       cool: false
@@ -106,6 +113,9 @@
     #- '物理防御:%player_level%'
     #commands:
     #- 'spawn'
+    #endCommands:
+    #  - '[console]give %player% diamond'
+    #  - 'say 药水效果结束了'
     #options:
     #  death: false
     #  cool: false

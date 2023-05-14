@@ -11,26 +11,25 @@ import java.util.HashMap;
 import java.util.List;
 
 public class SQLManager {
-    private final String username;
-    private final String password;
-    private final String url;
     public static boolean MySQL = false;
     public static SQLManager sql;
     @Getter private final BasicDataSource dataSource = new BasicDataSource();
 
     @SneakyThrows
     public SQLManager(String url, String username, String password, String driver) {
-        this.username = username;
-        this.password = password;
         Class.forName(driver);
-        this.url = url;
         dataSource.setDriverClassName(driver);
         dataSource.setUrl(url);
+
+        if(MySQL) {
+            dataSource.setUsername(username);
+            dataSource.setPassword(password);
+        }
     }
 
     @SneakyThrows
     public Connection getConnection() {
-        return MySQL ? DriverManager.getConnection(url, username, password) : dataSource.getConnection();
+        return dataSource.getConnection();
     }
 
     @SneakyThrows

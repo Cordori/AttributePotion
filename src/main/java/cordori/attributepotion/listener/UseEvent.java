@@ -313,7 +313,7 @@ public class UseEvent implements Listener {
             }
         }
     }
-    public static void attributeProcess(Player player, int time, String key, String name, List<String> attrList, long useTime, String group) {
+    public static void attributeProcess(Player player, int time, String key, String name, List<String> attrList, long useTime, String group, Potion potion) {
 
         if(attrList.isEmpty()) return;
 
@@ -349,6 +349,8 @@ public class UseEvent implements Listener {
                 SQLManager.sql.delete(String.valueOf(uuid), key);
 
                 if (player.isOnline()) {
+
+                    endCommandsProcess(potion, player);
                     if(ConfigManager.messagesHashMap.containsKey("outPotion")) {
                         player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("outPotion")
                                 .replaceAll("%player%", player.getName())
@@ -391,6 +393,29 @@ public class UseEvent implements Listener {
     }
     public static void commandsProcess(Potion potion, Player player) {
         List<String> commands = potion.getCommands();
+
+        if (commands.isEmpty())  return;
+
+        final String playerName = player.getName();
+        CommandSender sender;
+        for (String command : commands) {
+            if (command.startsWith("[console]")) {
+                command = command.substring(9).replace("%player%", playerName);
+                sender = Bukkit.getConsoleSender();
+            } else {
+                sender = player;
+            }
+
+            CommandSender finalSender = sender;
+            String finalCommand = command;
+            Bukkit.getScheduler().runTask(ap, () -> Bukkit.dispatchCommand(finalSender, finalCommand));
+
+        }
+
+    }
+    public static void endCommandsProcess(Potion potion, Player player) {
+
+        List<String> commands = potion.getEndCommands();
 
         if (commands.isEmpty())  return;
 
@@ -466,7 +491,7 @@ public class UseEvent implements Listener {
             potionEffectsProcess(player, potion);
 
             // 处理属性
-            attributeProcess(player, potion.getTime(), key, name, potion.getAttributes(), useTime, group);
+            attributeProcess(player, potion.getTime(), key, name, potion.getAttributes(), useTime, group, potion);
 
             // 处理effects
             effectsProcess(player, potion);
@@ -594,6 +619,7 @@ public class UseEvent implements Listener {
                     if(time>0) {
                         Bukkit.getScheduler().runTaskLaterAsynchronously(ap, () -> {
 
+                            endCommandsProcess(ConfigManager.potions.get(key), player);
                             attributeMap.computeIfPresent(uuid, (k, attrMap) -> {
                                 attrMap.remove(key);
                                 return attrMap;

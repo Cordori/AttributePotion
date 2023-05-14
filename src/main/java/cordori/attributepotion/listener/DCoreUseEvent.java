@@ -70,7 +70,7 @@ public class DCoreUseEvent implements Listener {
                         UseEvent.potionEffectsProcess(player, potion);
 
                         // 处理属性
-                        UseEvent.attributeProcess(player, potion.getTime(), key, name, potion.getAttributes(), useTime, group);
+                        UseEvent.attributeProcess(player, potion.getTime(), key, name, potion.getAttributes(), useTime, group, potion);
 
                         //effects效果处理
                         UseEvent.effectsProcess(player, potion);

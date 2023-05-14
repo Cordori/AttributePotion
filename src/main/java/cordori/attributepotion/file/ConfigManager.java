@@ -144,6 +144,7 @@ public class ConfigManager {
             List<String> attributes = colorStringList(config.getStringList(potionKey + ".attributes"));
             boolean consume = config.getBoolean(potionKey + ".consume", true);
             List<String> commands = config.getStringList(potionKey + ".commands");
+            List<String> endCommands = config.getStringList(potionKey + ".endCommands");
 
             Map<String, String> effects = new HashMap<>();
             if(config.contains(potionKey + ".effects")) {
@@ -172,7 +173,7 @@ public class ConfigManager {
                 }
             }
 
-            Potion potion = new Potion(potionKey, name, lore, time, cooldown, group, conditions, shift, effects, potionEffects, attributes, consume, commands, options);
+            Potion potion = new Potion(potionKey, name, lore, time, cooldown, group, conditions, shift, effects, potionEffects, attributes, consume, commands, endCommands, options);
             ConfigManager.potionKeys.add(potionKey);
             potionNames.put(name, potionKey);
             potionLores.put(lore, potionKey);
@@ -193,6 +194,7 @@ public class ConfigManager {
                 System.out.println("§a attributes: " + attributes);
                 System.out.println("§a consume: " + consume);
                 System.out.println("§a commands: " + commands);
+                System.out.println("§a endCommands: " + endCommands);
                 System.out.println("§a options: " + options);
                 System.out.println("§6----------------------------");
             }
