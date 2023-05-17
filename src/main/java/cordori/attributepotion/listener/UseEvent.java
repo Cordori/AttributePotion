@@ -386,7 +386,8 @@ public class UseEvent implements Listener {
         if(!options.isEmpty() && !isAir(item)) {
             //设置物品冷却
             if(options.containsKey("cool") && options.get("cool")) {
-                player.setCooldown(item.getType(), potion.getCooldown() * 20);
+                Bukkit.getScheduler().runTask(ap, () -> player.setCooldown(item.getType(), potion.getCooldown() * 20));
+                ;
             }
         }
 
@@ -396,11 +397,12 @@ public class UseEvent implements Listener {
 
         if (commands.isEmpty())  return;
 
-        final String playerName = player.getName();
+        commands = PAPIHook.papiProcess(player, commands);
+
         CommandSender sender;
         for (String command : commands) {
             if (command.startsWith("[console]")) {
-                command = command.substring(9).replace("%player%", playerName);
+                command = command.substring(9);
                 sender = Bukkit.getConsoleSender();
             } else {
                 sender = player;
@@ -415,15 +417,16 @@ public class UseEvent implements Listener {
     }
     public static void endCommandsProcess(Potion potion, Player player) {
 
-        List<String> commands = potion.getEndCommands();
+        List<String> endCommands = potion.getEndCommands();
 
-        if (commands.isEmpty())  return;
+        if (endCommands.isEmpty())  return;
 
-        final String playerName = player.getName();
+        endCommands = PAPIHook.papiProcess(player, endCommands);
+
         CommandSender sender;
-        for (String command : commands) {
+        for (String command : endCommands) {
             if (command.startsWith("[console]")) {
-                command = command.substring(9).replace("%player%", playerName);
+                command = command.substring(9);
                 sender = Bukkit.getConsoleSender();
             } else {
                 sender = player;
@@ -549,6 +552,7 @@ public class UseEvent implements Listener {
         Bukkit.getScheduler().runTaskAsynchronously(ap, () -> {
             Player player = event.getPlayer();
             UUID uuid = player.getUniqueId();
+            ConfigManager.playerUseTime.remove(uuid);
             attributeMap.remove(uuid);
         });
 

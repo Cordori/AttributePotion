@@ -45,6 +45,8 @@ public class PAPIHook extends PlaceholderExpansion {
     public static List<String> papiProcess(Player player, List<String> stringList) {
         return PlaceholderAPI.setPlaceholders(player, stringList);
     }
+
+
     @Override
     public String onPlaceholderRequest(Player player, String identifier) {
         if (player == null || identifier == null || identifier.isEmpty()) return null;

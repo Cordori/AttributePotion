@@ -9,6 +9,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ConfigManager {
     public static AttributePotion ap;
@@ -139,12 +140,28 @@ public class ConfigManager {
             int time = config.getInt(potionKey + ".time");
             int cooldown = config.getInt(potionKey + ".cooldown");
             String group = config.getString(potionKey + ".group");
-            List<String> conditions = config.getStringList(potionKey + ".conditions");
+            List<String> conditions = config.getStringList(potionKey + ".conditions")
+                    .stream()
+                    .filter(s -> !s.isEmpty())
+                    .map(String::trim)
+                    .collect(Collectors.toList());
             boolean shift = config.getBoolean(potionKey + ".shift", false);
-            List<String> attributes = colorStringList(config.getStringList(potionKey + ".attributes"));
+            List<String> attributes = colorStringList(config.getStringList(potionKey + ".attributes")).stream()
+                    .filter(s -> !s.isEmpty())
+                    .map(String::trim)
+                    .collect(Collectors.toList());
             boolean consume = config.getBoolean(potionKey + ".consume", true);
-            List<String> commands = config.getStringList(potionKey + ".commands");
-            List<String> endCommands = config.getStringList(potionKey + ".endCommands");
+            List<String> commands = config.getStringList(potionKey + ".commands").stream()
+                    .filter(s -> !s.isEmpty())
+                    .map(String::trim)
+                    .collect(Collectors.toList());
+            commands = commands.stream().map(str -> str.replaceAll("&", "§")).collect(Collectors.toList());
+
+            List<String> endCommands = config.getStringList(potionKey + ".endCommands").stream()
+                    .filter(s -> !s.isEmpty())
+                    .map(String::trim)
+                    .collect(Collectors.toList());
+            endCommands = endCommands.stream().map(str -> str.replaceAll("&", "§")).collect(Collectors.toList());
 
             Map<String, String> effects = new HashMap<>();
             if(config.contains(potionKey + ".effects")) {

@@ -6,7 +6,7 @@
 
     <groupId>cordori</groupId>
     <artifactId>AttributePotion</artifactId>
-    <version>1.4.2</version>
+    <version>1.4.4</version>
     <packaging>jar</packaging>
 
     <name>AttributePotion</name>
