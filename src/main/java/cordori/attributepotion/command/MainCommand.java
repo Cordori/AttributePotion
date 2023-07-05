@@ -68,7 +68,6 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                 if(ConfigManager.messagesHashMap.containsKey("reload")) {
                     sender.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("reload"));
                 }
-
             }
 
             else if (args[0].equalsIgnoreCase("addPotion")) {
@@ -93,10 +92,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
                 long startTime = System.currentTimeMillis();
                 commandUsePotion(player, potionKey, startTime);
-
-            } else {
-                sender.sendMessage(ConfigManager.prefix + "§c无效的指令！");
             }
+
         });
 
         return false;
@@ -114,7 +111,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         if(UseEvent.isGroupOnCooldown(player, uuid, group, useTime)) return;
 
         //药水条件判断
-        if(UseEvent.isPotionOnCooldown(player, uuid, key, name, potion, useTime)) return;
+        if(UseEvent.isPotionOnCooldown(player, uuid, key, potion, useTime)) return;
 
         //条件判断
         if(UseEvent.meetConditions(potion.getConditions(), player, name)) return;
@@ -123,7 +120,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         UseEvent.potionEffectsProcess(player, potion);
 
         // 处理属性
-        UseEvent.attributeProcess(player, potion.getTime(), key, name, potion.getAttributes(), useTime, group, potion);
+        UseEvent.attributeProcess(player, potion.getTime(), key, potion.getAttributes(), useTime, group, potion);
 
         //effects效果处理
         UseEvent.effectsProcess(player, potion);

@@ -1,7 +1,9 @@
 package cordori.attributepotion.file;
 
+import com.germ.germplugin.api.GermKeyAPI;
 import com.hankcs.algorithm.AhoCorasickDoubleArrayTrie;
 import cordori.attributepotion.AttributePotion;
+import cordori.attributepotion.utils.LogInfo;
 import cordori.attributepotion.utils.Potion;
 import eos.moe.dragoncore.api.CoreAPI;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -17,6 +19,7 @@ public class ConfigManager {
     public static String prefix;
     public static String identifier;
     public static boolean dragoncore;
+    public static boolean germplugin;
     public static AhoCorasickDoubleArrayTrie<String> trie = new AhoCorasickDoubleArrayTrie<>();
     public static HashMap<String, String> coreKeys = new HashMap<>();
     public static HashMap<String, Integer> group = new HashMap<>();
@@ -26,6 +29,7 @@ public class ConfigManager {
     public static HashMap<String, String> potionLores = new HashMap<>();
     public static Map<String, Potion> potions = new HashMap<>();
     public static HashMap<String, String> messagesHashMap = new HashMap<>();
+    public static HashMap<String, String> potionDisplayNameMap = new HashMap<>();
 
     public static void reloadMyConfig() {
         ap.reloadConfig();
@@ -33,6 +37,7 @@ public class ConfigManager {
         prefix = ap.getConfig().getString("prefix").replaceAll("&","§");
         identifier = ap.getConfig().getString("identifier");
         dragoncore = ap.getConfig().getBoolean("dragoncore");
+        germplugin = ap.getConfig().getBoolean("germplugin");
         loadGroup();
         loadFiles();
     }
@@ -42,31 +47,46 @@ public class ConfigManager {
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
         Set<String> groupKeys = config.getConfigurationSection("group").getKeys(false);
         Set<String> dragoncoreKeys = config.getConfigurationSection("dragoncoreKeys").getKeys(false);
+        Set<String> germpluginKeys = config.getConfigurationSection("germpluginKeys").getKeys(false);
 
         group.clear();
         for(String groupKey : groupKeys) {
             int groupTime = config.getInt("group." + groupKey);
             group.put(groupKey, groupTime);
             if(debug) {
-                System.out.println("§6----------------------------");
-                System.out.println("§a 药水组名称: " + groupKey);
-                System.out.println("§a 药水组冷却: " + groupTime);
-                System.out.println("§6----------------------------");
+                LogInfo.debug("§6----------------------------");
+                LogInfo.debug("§a 药水组名称: " + groupKey);
+                LogInfo.debug("§a 药水组冷却: " + groupTime);
+                LogInfo.debug("§6----------------------------");
             }
         }
 
-        if(!AttributePotion.DragonCore) return;
         coreKeys.clear();
-        for(String dragoncoreKey : dragoncoreKeys) {
-            String slotName = config.getString("dragoncoreKeys." + dragoncoreKey);
-            coreKeys.put(dragoncoreKey, slotName);
-            CoreAPI.registerKey(dragoncoreKey);
-            if(debug) {
-                System.out.println("§6----------------------------");
-                System.out.println("§a 按键名称: " + dragoncoreKey);
-                System.out.println("§a 槽位名称: " + slotName);
-                System.out.println("§6----------------------------");
+
+        if(AttributePotion.DragonCore) {
+
+            for(String dragoncoreKey : dragoncoreKeys) {
+                String slotName = config.getString("dragoncoreKeys." + dragoncoreKey);
+                coreKeys.put(dragoncoreKey, slotName);
+                CoreAPI.registerKey(dragoncoreKey);
+                if(debug) {
+                    LogInfo.debug("§6----------------------------");
+                    LogInfo.debug("§a 按键名称: " + dragoncoreKey);
+                    LogInfo.debug("§a 槽位名称: " + slotName);
+                    LogInfo.debug("§6----------------------------");
+                }
             }
+
+        }
+
+        else if(AttributePotion.GermPlugin) {
+
+            for(String germpluginKey : germpluginKeys) {
+                String slotName = config.getString("germpluginKeys." + germpluginKey);
+                coreKeys.put(germpluginKey, slotName);
+                GermKeyAPI.registerKey(Integer.parseInt(germpluginKey));
+            }
+
         }
     }
 
@@ -92,6 +112,7 @@ public class ConfigManager {
         potionKeys.clear();
         potionNames.clear();
         potionLores.clear();
+        potionDisplayNameMap.clear();
         messagesHashMap.clear();
         File potionsFolder = new File(ap.getDataFolder() + "/potions");
         findAllYmlFiles(potionsFolder);
@@ -108,7 +129,7 @@ public class ConfigManager {
             if(msg.equals("")) continue;
             messagesHashMap.put(key, msg);
             if(debug) {
-                System.out.println("§a " + key + "信息为: " + msg);
+                LogInfo.debug("§a " + key + "信息为: " + msg);
             }
         }
     }
@@ -135,10 +156,12 @@ public class ConfigManager {
         Set<String> potionKeys = config.getKeys(false);
 
         for(String potionKey : potionKeys) {
+            String displayName = config.getString(potionKey + ".name").replaceAll("&", "§");
+            potionDisplayNameMap.put(potionKey, displayName);
             String name = config.getString(potionKey + ".name").replaceAll("[&§]\\w", "");
             String lore = config.getString(potionKey + ".lore").replaceAll("[&§]\\w", "");
-            int time = config.getInt(potionKey + ".time");
-            int cooldown = config.getInt(potionKey + ".cooldown");
+            int time = config.getInt(potionKey + ".time", 0);
+            int cooldown = config.getInt(potionKey + ".cooldown", 0);
             String group = config.getString(potionKey + ".group");
             List<String> conditions = config.getStringList(potionKey + ".conditions")
                     .stream()
@@ -162,6 +185,7 @@ public class ConfigManager {
                     .map(String::trim)
                     .collect(Collectors.toList());
             endCommands = endCommands.stream().map(str -> str.replaceAll("&", "§")).collect(Collectors.toList());
+            int rangeValue = config.getInt(potionKey + ".rangeValue", 0);
 
             Map<String, String> effects = new HashMap<>();
             if(config.contains(potionKey + ".effects")) {
@@ -190,30 +214,32 @@ public class ConfigManager {
                 }
             }
 
-            Potion potion = new Potion(potionKey, name, lore, time, cooldown, group, conditions, shift, effects, potionEffects, attributes, consume, commands, endCommands, options);
+            Potion potion = new Potion(potionKey, name, lore, time, cooldown, group, conditions, shift,
+                    effects, potionEffects, attributes, consume, commands, endCommands, options, rangeValue);
             ConfigManager.potionKeys.add(potionKey);
             potionNames.put(name, potionKey);
             potionLores.put(lore, potionKey);
             potions.put(potionKey, potion);
 
             if(debug) {
-                System.out.println("§6----------------------------");
-                System.out.println("§a key: " + potionKey);
-                System.out.println("§a name: " + name);
-                System.out.println("§a Lore: " + lore);
-                System.out.println("§a time: " + time);
-                System.out.println("§a cooldown: " + cooldown);
-                System.out.println("§a group: " + group);
-                System.out.println("§a conditions: " + conditions);
-                System.out.println("§a shift: " + shift);
-                System.out.println("§a effects: " + effects.entrySet());
-                System.out.println("§a potions: " + potionEffects.entrySet());
-                System.out.println("§a attributes: " + attributes);
-                System.out.println("§a consume: " + consume);
-                System.out.println("§a commands: " + commands);
-                System.out.println("§a endCommands: " + endCommands);
-                System.out.println("§a options: " + options);
-                System.out.println("§6----------------------------");
+                LogInfo.debug("§6----------------------------");
+                LogInfo.debug("§a key: " + potionKey);
+                LogInfo.debug("§a name: " + name);
+                LogInfo.debug("§a Lore: " + lore);
+                LogInfo.debug("§a time: " + time);
+                LogInfo.debug("§a cooldown: " + cooldown);
+                LogInfo.debug("§a group: " + group);
+                LogInfo.debug("§a conditions: " + conditions);
+                LogInfo.debug("§a shift: " + shift);
+                LogInfo.debug("§a effects: " + effects.entrySet());
+                LogInfo.debug("§a potions: " + potionEffects.entrySet());
+                LogInfo.debug("§a attributes: " + attributes);
+                LogInfo.debug("§a consume: " + consume);
+                LogInfo.debug("§a commands: " + commands);
+                LogInfo.debug("§a endCommands: " + endCommands);
+                LogInfo.debug("§a options: " + options);
+                LogInfo.debug("§a rangeValue: " + rangeValue);
+                LogInfo.debug("§6----------------------------");
             }
         }
     }

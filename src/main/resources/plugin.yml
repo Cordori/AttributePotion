@@ -11,6 +11,8 @@ softdepend:
   - PlaceholderAPI
   - SkillAPI
   - DragonCore
+  - AttributeSystem
+  - OriginAttribute
 
 commands:
   attributepotion:

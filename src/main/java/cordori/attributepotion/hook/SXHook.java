@@ -1,7 +1,8 @@
 package cordori.attributepotion.hook;
 
 import cordori.attributepotion.AttributePotion;
-import cordori.attributepotion.listener.UseEvent;
+import cordori.attributepotion.file.ConfigManager;
+import cordori.attributepotion.utils.LogInfo;
 import github.saukiya.sxattribute.data.attribute.SXAttributeData;
 import github.saukiya.sxattribute.data.condition.SXConditionType;
 import lombok.SneakyThrows;
@@ -11,6 +12,7 @@ import org.bukkit.entity.Player;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +21,7 @@ public class SXHook {
     public static Method setEntityAPIData;
     public static Method method;
     public static Object api;
+    public static HashMap<UUID, HashMap<String, List<String>>> attributeMap = new HashMap<>();
 
     public static void setSXMethod() throws NoSuchMethodException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
         Class<?> clazz = Class.forName("github.saukiya.sxattribute.SXAttribute");
@@ -29,17 +32,28 @@ public class SXHook {
         method = AttributePotion.SX3 ? api.getClass().getMethod("loadListData", List.class) : api.getClass().getMethod("getLoreData", LivingEntity.class, SXConditionType.class, List.class);
     }
 
-    public static void addSXAttribute(Player player) {
+    public static void addAttribute(Player player) {
         UUID uuid = player.getUniqueId();
         List<String> SXList = new ArrayList<>();
-        UseEvent.attributeMap.values().forEach(attrMap -> attrMap.values().forEach(SXList::addAll));
+        attributeMap.values().forEach(attrMap -> attrMap.values().forEach(SXList::addAll));
+        if(ConfigManager.debug) {
+            LogInfo.debug(SXList.toString());
+        }
         updateAttribute(SXList, player, uuid);
     }
 
-    public static void takeSXAttribute(Player player) {
+    public static void takeAttribute(Player player, String key) {
         UUID uuid = player.getUniqueId();
         List<String> SXList = new ArrayList<>();
-        UseEvent.attributeMap.values().forEach(attrMap -> attrMap.values().forEach(SXList::addAll));
+        attributeMap.get(uuid).remove(key);
+        HashMap<String, List<String>> tempMap = attributeMap.get(uuid);
+        tempMap.remove(key);
+        for(List<String> list : tempMap.values()) {
+            SXList.addAll(list);
+        }
+        if(ConfigManager.debug) {
+            LogInfo.debug(SXList.toString());
+        }
         updateAttribute(SXList, player, uuid);
     }
 
@@ -47,7 +61,6 @@ public class SXHook {
     private static void updateAttribute(List<String> SXList, Player player, UUID uuid) {
         SXAttributeData data;
         data = getSXAttributeData(SXList);
-
         setEntityAPIData.invoke(api, AttributePotion.class, uuid, data);
         attributeUpdate.invoke(api, player);
     }

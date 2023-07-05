@@ -4,22 +4,20 @@ import com.hankcs.algorithm.AhoCorasickDoubleArrayTrie;
 import cordori.attributepotion.AttributePotion;
 import cordori.attributepotion.file.ConfigManager;
 import cordori.attributepotion.file.SQLManager;
-import cordori.attributepotion.hook.APHook;
-import cordori.attributepotion.hook.PAPIHook;
-import cordori.attributepotion.hook.SXHook;
-import cordori.attributepotion.hook.SkillAPIHook;
+import cordori.attributepotion.hook.*;
+import cordori.attributepotion.utils.LogInfo;
 import cordori.attributepotion.utils.Potion;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -36,7 +34,6 @@ import static com.google.common.collect.Sets.newHashSet;
 public class UseEvent implements Listener {
     private static final AttributePotion ap = AttributePotion.getInstance();
     private static final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
-    public static final HashMap<UUID, HashMap<String, List<String>>> attributeMap = new HashMap<>();
 
     /**
     *判断动作是否符合
@@ -49,6 +46,30 @@ public class UseEvent implements Listener {
     *设置物品冷却
     *执行指令
     */
+
+    public static void addAttribute(Player player, String key, List<String> attrList) {
+        if(AttributePotion.AttributePlus) {
+            APHook.addAttribute(player, attrList, key);
+        } else if(AttributePotion.SXAttribute){
+            SXHook.addAttribute(player);
+        } else if(AttributePotion.OriginAttribute) {
+            OAHook.addAttribute(player, key, attrList);
+        } else if(AttributePotion.AttributeSystem) {
+            ASHook.addAttribute(player, key, attrList);
+        }
+    }
+
+    public static void takeAttribute(Player player, String key) {
+        if(AttributePotion.AttributePlus) {
+            APHook.takeAttribute(player, key);
+        } else if(AttributePotion.SXAttribute){
+            SXHook.takeAttribute(player, key);
+        } else if(AttributePotion.OriginAttribute) {
+            OAHook.takeAttribute(player, key);
+        } else if(AttributePotion.AttributeSystem) {
+            ASHook.takeAttribute(player, key);
+        }
+    }
 
     public static boolean isAir(ItemStack item) { return item == null || item.getType() == Material.AIR; }
     public static String matchItem(ItemStack item) {
@@ -83,8 +104,10 @@ public class UseEvent implements Listener {
 
         // 获取上次使用药水的时间
         long lastGroupTime = 0;
-        if (ConfigManager.playerUseTime.get(uuid).containsKey(group)) {
-            lastGroupTime = ConfigManager.playerUseTime.get(uuid).get(group);
+        if(ConfigManager.playerUseTime.containsKey(uuid)) {
+            if (ConfigManager.playerUseTime.get(uuid).containsKey(group)) {
+                lastGroupTime = ConfigManager.playerUseTime.get(uuid).get(group);
+            }
         }
 
         // 计算当前使用时间与上次使用时间之差是否小于药水组冷却时间
@@ -105,12 +128,15 @@ public class UseEvent implements Listener {
 
         return false;
     }
-    public static boolean isPotionOnCooldown(Player player, UUID uuid, String key, String name, Potion potion, long useTime) {
+    public static boolean isPotionOnCooldown(Player player, UUID uuid, String key, Potion potion, long useTime) {
+
         long lastPotionTime = 0;
 
         // 获取玩家上次使用该药水的时间
-        if (ConfigManager.playerUseTime.get(uuid).containsKey(key)) {
-            lastPotionTime = ConfigManager.playerUseTime.get(uuid).get(key);
+        if(ConfigManager.playerUseTime.containsKey(uuid)) {
+            if (ConfigManager.playerUseTime.get(uuid).containsKey(key)) {
+                lastPotionTime = ConfigManager.playerUseTime.get(uuid).get(key);
+            }
         }
 
         // 计算当前使用时间与上次使用时间之差是否小于药水冷却时间
@@ -119,6 +145,7 @@ public class UseEvent implements Listener {
 
             if ((useTime - lastPotionTime) / 1000 <= potionCooldown) {
                 if(ConfigManager.messagesHashMap.containsKey("onPotionCooldown")) {
+                    String name = ConfigManager.potionDisplayNameMap.get(key);
                     player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("onPotionCooldown")
                             .replace("%potion%", name)
                             .replace("%cooldown%", String.valueOf(potionCooldown - (useTime - lastPotionTime) / 1000))
@@ -313,20 +340,17 @@ public class UseEvent implements Listener {
             }
         }
     }
-    public static void attributeProcess(Player player, int time, String key, String name, List<String> attrList, long useTime, String group, Potion potion) {
+    public static void attributeProcess(Player player, int time, String key, List<String> attrList, long useTime, String group, Potion potion) {
 
         if(attrList.isEmpty()) return;
 
         UUID uuid = player.getUniqueId();
         attrList = PAPIHook.papiProcess(player, attrList);
-        attributeMap.computeIfAbsent(uuid, k -> new HashMap<>()).put(key, attrList);
+        SXHook.attributeMap.computeIfAbsent(uuid, k -> new HashMap<>()).put(key, attrList);
 
-        if(AttributePotion.AttributePlus) {
-            APHook.addAPAttribute(player, attrList, key);
-        } else if(AttributePotion.SXAttribute){
-            SXHook.addSXAttribute(player);
-        }
+        addAttribute(player, key, attrList);
 
+        String name = ConfigManager.potionDisplayNameMap.get(key);
         // 到时清除属性源
         if(time>0) {
             // 插入数据到数据库
@@ -334,16 +358,7 @@ public class UseEvent implements Listener {
 
             Bukkit.getScheduler().runTaskLaterAsynchronously(ap, () -> {
 
-                attributeMap.computeIfPresent(uuid, (k, attrMap) -> {
-                    attrMap.remove(key);
-                    return attrMap;
-                });
-
-                if(AttributePotion.AttributePlus) {
-                    APHook.takeAPAttribute(player, key);
-                } else if(AttributePotion.SXAttribute){
-                    SXHook.takeSXAttribute(player);
-                }
+                takeAttribute(player, key);
 
                 // 从数据库删除数据
                 SQLManager.sql.delete(String.valueOf(uuid), key);
@@ -352,6 +367,7 @@ public class UseEvent implements Listener {
 
                     endCommandsProcess(potion, player);
                     if(ConfigManager.messagesHashMap.containsKey("outPotion")) {
+
                         player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("outPotion")
                                 .replaceAll("%player%", player.getName())
                                 .replaceAll("%potion%", name)
@@ -371,7 +387,6 @@ public class UseEvent implements Listener {
             );
         }
     }
-
     public static void isConsume(Potion potion, ItemStack item) {
         if(potion.isConsume()) {
             if (item.getAmount() >= 1) {
@@ -379,15 +394,51 @@ public class UseEvent implements Listener {
             }
         }
     }
-    public static void optionsProcess(Player player, Potion potion, ItemStack item) {
+    public static void optionsProcess(Player player, Potion potion, ItemStack item, int time, String key, List<String> attrList, long useTime, String group) {
 
         Map<String, Boolean> options = potion.getOptions();
 
-        if(!options.isEmpty() && !isAir(item)) {
-            //设置物品冷却
-            if(options.containsKey("cool") && options.get("cool")) {
+        if(!options.isEmpty()) {
+            // 设置物品冷却
+            if(!isAir(item) && options.containsKey("cool") && options.get("cool")) {
                 Bukkit.getScheduler().runTask(ap, () -> player.setCooldown(item.getType(), potion.getCooldown() * 20));
-                ;
+            }
+
+            // 范围使用
+            if(options.containsKey("range") && options.get("range")) {
+                String name = ConfigManager.potionDisplayNameMap.get(key);
+                int rangeValue = potion.getRangeValue();
+                if(rangeValue > 0) {
+                    List<String> playerList = new ArrayList<>();
+                    List<Entity> entityList = player.getNearbyEntities(rangeValue, rangeValue, rangeValue);
+                    for(Entity entity : entityList) {
+                        if(entity instanceof Player) {
+                            Player player1 = ((Player) entity).getPlayer();
+                            playerList.add(player1.getName());
+                            attributeProcess(player1, time, key, attrList, useTime, group, potion);
+                            if(ConfigManager.messagesHashMap.containsKey("otherPotion")) {
+                                player1.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("otherPotion")
+                                        .replaceAll("%player%", player.getName())
+                                        .replaceAll("%potion%", name)
+                                );
+                            }
+                        }
+                    }
+
+                    if(ConfigManager.messagesHashMap.containsKey("nearPotion")) {
+                        StringBuilder sb = new StringBuilder();
+                        for (String playerName : playerList) {
+                            sb.append(playerName).append(", ");
+                        }
+                        sb.setLength(sb.length() - 2);
+
+                        player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("nearPotion")
+                                .replaceAll("%range%", String.valueOf(rangeValue))
+                                .replaceAll("%playerList%", String.valueOf(sb))
+                                .replaceAll("%potion%", name)
+                        );
+                    }
+                }
             }
         }
 
@@ -482,7 +533,7 @@ public class UseEvent implements Listener {
             String name = potion.getName();
 
             // 判断药水是否处于冷却
-            if(isPotionOnCooldown(player, uuid, key, name, potion, useTime)) return;
+            if(isPotionOnCooldown(player, uuid, key, potion, useTime)) return;
 
             // 判断是否满足条件
             if(meetConditions(potion.getConditions(), player, name)) return;
@@ -494,7 +545,8 @@ public class UseEvent implements Listener {
             potionEffectsProcess(player, potion);
 
             // 处理属性
-            attributeProcess(player, potion.getTime(), key, name, potion.getAttributes(), useTime, group, potion);
+            List<String> attrList = PAPIHook.papiProcess(player, potion.getAttributes());
+            attributeProcess(player, potion.getTime(), key, attrList, useTime, group, potion);
 
             // 处理effects
             effectsProcess(player, potion);
@@ -504,7 +556,7 @@ public class UseEvent implements Listener {
             ConfigManager.playerUseTime.get(uuid).put(group, useTime);
 
             // 选项处理
-            optionsProcess(player, potion, item);
+            optionsProcess(player, potion, item, potion.getTime(), key, attrList, useTime, group);
 
             // 处理指令
             commandsProcess(potion, player);
@@ -512,7 +564,7 @@ public class UseEvent implements Listener {
             if(ConfigManager.debug) {
                 long endTime = System.currentTimeMillis();
                 long elapsedTime = endTime - startTime;
-                System.out.println("§e Vanilla的药水使用事件消耗的时间：" + elapsedTime + "ms");
+                LogInfo.debug("§e Vanilla的药水使用事件消耗的时间：" + elapsedTime + "ms");
             }
 
         });
@@ -525,17 +577,14 @@ public class UseEvent implements Listener {
             Player player = event.getPlayer();
             UUID uuid = player.getUniqueId();
 
-            if(attributeMap.get(uuid).isEmpty()) return;
-            for(String key : attributeMap.get(uuid).keySet()) {
+            if(!SXHook.attributeMap.containsKey(uuid) || SXHook.attributeMap.get(uuid).isEmpty()) return;
+            for(String key : SXHook.attributeMap.get(uuid).keySet()) {
 
                 if(ConfigManager.potions.get(key).getOptions().containsKey("death")) {
                     if(ConfigManager.potions.get(key).getOptions().get("death")) {
-                        attributeMap.get(uuid).remove(key);
-                        if(AttributePotion.AttributePlus) {
-                            APHook.takeAPAttribute(player, key);
-                        } else if(AttributePotion.SXAttribute){
-                            SXHook.takeSXAttribute(player);
-                        }
+                        SXHook.attributeMap.get(uuid).remove(key);
+
+                        takeAttribute(player, key);
 
                         // 从数据库删除数据
                         SQLManager.sql.delete(uuid.toString(), key);
@@ -546,123 +595,95 @@ public class UseEvent implements Listener {
         });
     }
 
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-
-        Bukkit.getScheduler().runTaskAsynchronously(ap, () -> {
-            Player player = event.getPlayer();
-            UUID uuid = player.getUniqueId();
-            ConfigManager.playerUseTime.remove(uuid);
-            attributeMap.remove(uuid);
-        });
-
-    }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        String uid = uuid.toString();
+
+        if(!ConfigManager.playerUseTime.containsKey(uuid)) {
+            ConfigManager.playerUseTime.put(uuid, new HashMap<>());
+        }
+
+        if(!SXHook.attributeMap.containsKey(uuid)) {
+            SXHook.attributeMap.put(uuid, new HashMap<>());
+        }
 
         Bukkit.getScheduler().runTaskAsynchronously(ap, () -> {
 
             long startTime = System.currentTimeMillis();
-            Player player = event.getPlayer();
-            UUID uuid = player.getUniqueId();
-            String uid = uuid.toString();
-            if(!ConfigManager.playerUseTime.containsKey(uuid)) {
-                ConfigManager.playerUseTime.put(uuid, new HashMap<>());
-            }
 
             HashMap<String, List<Object>> potionData = SQLManager.sql.getPotionData(uid);
-            if(potionData == null) return;
-
-            HashMap<String, Long> groupTimeMap = new HashMap<>();
-            long lastGroupTime = 0;
+            if(potionData.isEmpty()) return;
 
             for(String key : potionData.keySet()) {
+
                 String str = (String) potionData.get(key).get(0);
                 List<String> attrList = Arrays.asList(str.split(","));
                 String group = (String) potionData.get(key).get(1);
 
-                long lastTime = (long) potionData.get(key).get(2);
+                if(!SXHook.attributeMap.get(uuid).containsKey(key)) {
 
-                if(lastTime > lastGroupTime) {
-                    lastGroupTime = lastTime;
-                    groupTimeMap.put(group, lastGroupTime);
-                }
+                    SXHook.attributeMap.get(uuid).put(key, attrList);
+                    long lastTime = (long) potionData.get(key).get(2);
 
-                long currentTime = System.currentTimeMillis();
-                int time = ConfigManager.potions.get(key).getTime();
+                    ConfigManager.playerUseTime.get(uuid).put(key, lastTime);
+                    ConfigManager.playerUseTime.get(uuid).put(group, lastTime);
+                    if(lastTime == -1L) continue;
 
-                if(ConfigManager.debug) {
-                    System.out.println("§6----------------------------");
-                    System.out.println(key);
-                    System.out.println(attrList);
-                    System.out.println(group);
-                    System.out.println(lastTime);
-                    System.out.println("§6----------------------------");
-                }
+                    long currentTime = System.currentTimeMillis();
+                    int time = ConfigManager.potions.get(key).getTime();
 
-                if(lastTime == -1L) {
-                    attributeMap.computeIfAbsent(uuid, k -> new HashMap<>()).put(key, attrList);
-                    if(AttributePotion.AttributePlus) {
-                        APHook.addAPAttribute(player, attrList, key);
-                    } else if(AttributePotion.SXAttribute){
-                        SXHook.addSXAttribute(player);
-                    }
-                    continue;
-                }
-
-                if(currentTime - lastTime < time * 1000L) {
-                    attributeMap.computeIfAbsent(uuid, k -> new HashMap<>()).put(key, attrList);
-                    int remainTime = (int) (time - (currentTime - lastTime) / 1000);
-                    if(AttributePotion.AttributePlus) {
-                        APHook.addAPAttribute(player, attrList, key);
-                    } else if(AttributePotion.SXAttribute){
-                        SXHook.addSXAttribute(player);
+                    if(ConfigManager.debug) {
+                        LogInfo.debug("§6----------------------------");
+                        LogInfo.debug(key);
+                        LogInfo.debug(attrList.toString());
+                        LogInfo.debug(group);
+                        LogInfo.debug(String.valueOf(lastTime));
+                        LogInfo.debug("§6----------------------------");
                     }
 
-                    if(time>0) {
-                        Bukkit.getScheduler().runTaskLaterAsynchronously(ap, () -> {
 
-                            endCommandsProcess(ConfigManager.potions.get(key), player);
-                            attributeMap.computeIfPresent(uuid, (k, attrMap) -> {
-                                attrMap.remove(key);
-                                return attrMap;
-                            });
+                    if(currentTime - lastTime < time * 1000L) {
+                        int remainTime = (int) (time - (currentTime - lastTime) / 1000);
 
-                            if(AttributePotion.AttributePlus) {
-                                APHook.takeAPAttribute(player, key);
-                            } else if(AttributePotion.SXAttribute){
-                                SXHook.takeSXAttribute(player);
-                            }
+                        if(time > 0) {
 
-                            // 从数据库删除数据
-                            SQLManager.sql.delete(uid, key);
+                            Bukkit.getScheduler().runTaskLaterAsynchronously(ap, () -> {
 
-                            String name = ConfigManager.potions.get(key).getName();
-                            if (player.isOnline()) {
-                                if(ConfigManager.messagesHashMap.containsKey("outPotion")) {
-                                    player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("outPotion")
-                                            .replaceAll("%player%", player.getName())
-                                            .replaceAll("%potion%", name)
-                                    );
+                                endCommandsProcess(ConfigManager.potions.get(key), player);
+
+                                takeAttribute(player, key);
+
+                                // 从数据库删除数据
+                                SQLManager.sql.delete(uid, key);
+
+                                if (player.isOnline()) {
+                                    if(ConfigManager.messagesHashMap.containsKey("outPotion")) {
+                                        String name = ConfigManager.potionDisplayNameMap.get(key);
+                                        player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("outPotion")
+                                                .replaceAll("%player%", player.getName())
+                                                .replaceAll("%potion%", name)
+                                        );
+                                    }
                                 }
-                            }
-                        }, remainTime * 20L);
+                            }, remainTime * 20L);
+                        }
+
+                    } else {
+                        SXHook.attributeMap.get(uuid).remove(key);
+                        SQLManager.sql.delete(uid, key);
                     }
-
-                } else {
-                    SQLManager.sql.delete(uid, key);
                 }
+
             }
 
-            for(String group : groupTimeMap.keySet()) {
-                ConfigManager.playerUseTime.get(uuid).put(group, lastGroupTime);
-            }
 
             if(ConfigManager.debug) {
                 long endTime = System.currentTimeMillis();
                 long elapsedTime = endTime - startTime;
-                System.out.println("§e 进服药水效果重新获取事件消耗的时间：" + elapsedTime + "ms");
+                LogInfo.debug("§e 进服药水效果重新获取事件消耗的时间：" + elapsedTime + "ms");
             }
 
         });

@@ -1,9 +1,9 @@
 # 药水节点名，用作识别(必写)
 测试药水:
     # 药水的显示名(必写)
-    name: '&a测试药水'
+    name: '测试药水'
     # 识别的lore(必写)
-    lore: '&a这是一瓶测试药水'
+    lore: '这是一瓶测试药水'
     # 药水持续时间，单位/秒(必写)，写0的话表示永久属性
     time: 10
     # 药水冷却时间，单位/秒(必写)
@@ -46,11 +46,11 @@
     consume: true
     # 使用药水后执行的指令，console表示以控制台执行，不写表示玩家身份执行(可选) [注：不支持op执行]
     commands:
-      - '[console]give %player% apple'
+      - '[console]give %player_name% apple'
       - 'spawn'
     # 药水结束后执行的指令
     endCommands:
-      - '[console]give %player% diamond'
+      - '[console]give %player_name% diamond'
       - 'say 药水效果结束了'
     # 其他设置
     options:
@@ -58,11 +58,15 @@
       death: false
       # 是否设置物品冷却。这是原版的那种，较为直观展示冷却时间，但是会导致同类型材料的物品显示一同进入冷却(可选，默认false)
       cool: false
+      # 是否范围内所有人享受药水效果(可选，不写的话默认只给自己用，默认false)
+      range: false
+    # 范围大小
+    rangeValue: 10
 
 # 无注释展示版本
 生命药水:
-    name: '&a生命药水'
-    lore: '&e这是一瓶生命药水'
+    name: '生命药水'
+    lore: '这是一瓶生命药水'
     time: 5
     cooldown: 30
     group: '初级药水组'
@@ -84,16 +88,17 @@
     commands:
       - 'say 我使用了一瓶生命药水~'
     endCommands:
-      - '[console]give %player% diamond'
+      - '[console]give %player_name% diamond'
       - 'say 药水效果结束了'
     options:
       death: false
       cool: false
+      range: false
 
 # 必填展示版本
 无用药水:
-    name: '&b无用药水'
-    lore: '&a这是一瓶啥作用都没有的药水'
+    name: '无用药水'
+    lore: '这是一瓶啥作用都没有的药水'
     time: 1
     cooldown: 60
     #group: '中级药水组'
@@ -114,15 +119,16 @@
     #commands:
     #- 'spawn'
     #endCommands:
-    #  - '[console]give %player% diamond'
+    #  - '[console]give %player_name% diamond'
     #  - 'say 药水效果结束了'
     #options:
     #  death: false
     #  cool: false
+    #  range: false
 
 巨力药水:
-    name: '&6巨力药水'
-    lore: '&a这是一瓶巨力药水'
+    name: '巨力药水'
+    lore: '这是一瓶巨力药水'
     time: 30
     cooldown: 180
     group: '高级药水组'

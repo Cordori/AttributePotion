@@ -2,6 +2,8 @@ package cordori.attributepotion.listener;
 
 import cordori.attributepotion.AttributePotion;
 import cordori.attributepotion.file.ConfigManager;
+import cordori.attributepotion.hook.PAPIHook;
+import cordori.attributepotion.utils.LogInfo;
 import cordori.attributepotion.utils.Potion;
 import eos.moe.dragoncore.api.SlotAPI;
 import eos.moe.dragoncore.api.event.KeyPressEvent;
@@ -13,6 +15,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -55,7 +58,7 @@ public class DCoreUseEvent implements Listener {
                         if (UseEvent.isGroupOnCooldown(player, uuid, group, useTime)) return;
 
                         //药水条件判断
-                        if (UseEvent.isPotionOnCooldown(player, uuid, key, name, potion, useTime)) return;
+                        if (UseEvent.isPotionOnCooldown(player, uuid, key, potion, useTime)) return;
 
                         //条件判断
                         if (UseEvent.meetConditions(potion.getConditions(), player, name)) return;
@@ -70,7 +73,8 @@ public class DCoreUseEvent implements Listener {
                         UseEvent.potionEffectsProcess(player, potion);
 
                         // 处理属性
-                        UseEvent.attributeProcess(player, potion.getTime(), key, name, potion.getAttributes(), useTime, group, potion);
+                        List<String> attrList = PAPIHook.papiProcess(player, potion.getAttributes());
+                        UseEvent.attributeProcess(player, potion.getTime(), key, attrList, useTime, group, potion);
 
                         //effects效果处理
                         UseEvent.effectsProcess(player, potion);
@@ -85,13 +89,16 @@ public class DCoreUseEvent implements Listener {
                             player.setCooldown(item.getType(), potion.getCooldown() * 20);
                         }
 
+                        UseEvent.optionsProcess(player, potion, item, potion.getTime(), key, attrList, useTime, group);
+
                         //处理指令
                         UseEvent.commandsProcess(potion, player);
 
                         if (ConfigManager.debug) {
                             long endTime = System.currentTimeMillis();
                             long elapsedTime = endTime - startTime;
-                            System.out.println("§e DragonCore的药水使用事件消耗的时间：" + elapsedTime + "ms");
+                            LogInfo.debug("§e DragonCore的药水使用事件消耗的时间：" + elapsedTime + "ms");
+
                         }
 
                     }

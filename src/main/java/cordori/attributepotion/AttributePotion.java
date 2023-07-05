@@ -1,11 +1,14 @@
 package cordori.attributepotion;
 
+import ac.github.oa.api.OriginAttributeAPI;
 import cordori.attributepotion.command.MainCommand;
 import cordori.attributepotion.file.ConfigManager;
 import cordori.attributepotion.file.SQLManager;
+import cordori.attributepotion.hook.OAHook;
 import cordori.attributepotion.hook.PAPIHook;
 import cordori.attributepotion.hook.SXHook;
 import cordori.attributepotion.listener.DCoreUseEvent;
+import cordori.attributepotion.listener.GermUseEvent;
 import cordori.attributepotion.listener.UseEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
@@ -22,7 +25,10 @@ public final class AttributePotion extends JavaPlugin {
     private static AttributePotion Instance;
     public static boolean Skillapi = false;
     public static boolean DragonCore = false;
+    public static boolean GermPlugin = false;
     public static boolean AttributePlus = false;
+    public static boolean OriginAttribute = false;
+    public static boolean AttributeSystem = false;
     public static boolean AP3 = false;
     public static boolean SX3 = false;
     public static boolean SXAttribute = false;
@@ -37,7 +43,7 @@ public final class AttributePotion extends JavaPlugin {
         ConfigManager.ap = this;
         createFile();
         ConfigManager.reloadMyConfig();
-        if(getConfig().getString("database").equalsIgnoreCase("MySQL")) SQLManager.MySQL = true;
+        if(getConfig().getString("storage").equalsIgnoreCase("MySQL")) SQLManager.MySQL = true;
         loadSQL();
         Bukkit.getPluginCommand(("attributepotion")).setExecutor(new MainCommand());
         Bukkit.getPluginManager().registerEvents(new UseEvent(), this);
@@ -55,6 +61,22 @@ public final class AttributePotion extends JavaPlugin {
 
         Plugin AP = Bukkit.getPluginManager().getPlugin("AttributePlus");
         Plugin SX = Bukkit.getPluginManager().getPlugin("SX-Attribute");
+        Plugin AS = Bukkit.getPluginManager().getPlugin("AttributeSystem");
+        Plugin OA = Bukkit.getPluginManager().getPlugin("OriginAttribute");
+
+
+        if (OA != null) {
+            OriginAttribute = true;
+            OAHook.OAAPI = OriginAttributeAPI.INSTANCE;
+            String version = OA.getDescription().getVersion();
+            getLogger().info("§6[属性药水]§a已找到OriginAttribute插件，插件将以OA作为默认属性来源！OA版本: " + version);
+        }
+
+        if (AS != null) {
+            AttributeSystem = true;
+            String version = AS.getDescription().getVersion();
+            getLogger().info("§6[属性药水]§a已找到AttributeSystem插件，插件将以AS作为默认属性来源！AS版本: " + version);
+        }
 
         if (AP != null && SX == null) {
             AttributePlus = true;
@@ -110,6 +132,16 @@ public final class AttributePotion extends JavaPlugin {
             getLogger().warning("§6[属性药水]§e未找到DragonCore插件，无法启用龙核按键使用药水！");
         }
 
+        if(Bukkit.getPluginManager().getPlugin("GermPlugin") != null) {
+            getLogger().info("§6[属性药水]§a已找到GermPlugin插件，可启用萌芽按键使用药水！");
+            if(getConfig().getBoolean("germplugin")) {
+                Bukkit.getPluginManager().registerEvents(new GermUseEvent(), this);
+                GermPlugin = true;
+            }
+        } else {
+            getLogger().warning("§6[属性药水]§e未找到GermPlugin插件，无法启用萌芽按键使用药水！");
+        }
+
     }
 
     private void createFile() {
@@ -146,21 +178,23 @@ public final class AttributePotion extends JavaPlugin {
         String port = getConfig().getString("MySQL.port");
         String username = getConfig().getString("MySQL.username");
         String password = getConfig().getString("MySQL.password");
-        String table = getConfig().getString("MySQL.table");
+        String fileName = getConfig().getString("MySQL.fileName");
+        String tableName = getConfig().getString("MySQL.tableName").toLowerCase();
         String driver;
         driver = getConfig().getString("MySQL.driver");
         String jdbc = getConfig().getString("MySQL.jdbc");
         String sqlString;
 
         if(SQLManager.MySQL) {
-            sqlString = "jdbc:mysql://" + host + ":" + port + "/" + table + jdbc;
+            sqlString = "jdbc:mysql://" + host + ":" + port + "/" + fileName + jdbc;
         } else {
             driver = "org.sqlite.JDBC";
             sqlString = "jdbc:sqlite:" + getDataFolder().toPath().resolve("database.db");
         }
 
-        SQLManager.sql = new SQLManager(sqlString, username, password, driver);
-        Bukkit.getScheduler().runTaskAsynchronously(this, () -> SQLManager.sql.createTable());
+        SQLManager.sql = new SQLManager(sqlString, username, password, driver, tableName);
+
+        Bukkit.getScheduler().runTaskAsynchronously(this, SQLManager.sql::createTable);
 
     }
 }

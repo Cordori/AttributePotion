@@ -13,10 +13,12 @@ import java.util.List;
 public class SQLManager {
     public static boolean MySQL = false;
     public static SQLManager sql;
+    private final String tableName;
     @Getter private final BasicDataSource dataSource = new BasicDataSource();
 
     @SneakyThrows
-    public SQLManager(String url, String username, String password, String driver) {
+    public SQLManager(String url, String username, String password, String driver, String tableName) {
+        this.tableName = tableName;
         Class.forName(driver);
         dataSource.setDriverClassName(driver);
         dataSource.setUrl(url);
@@ -41,7 +43,7 @@ public class SQLManager {
     public void createTable() {
         @Cleanup Connection conn = getConnection();
         @Cleanup Statement statement = conn.createStatement();
-        String query = "CREATE TABLE IF NOT EXISTS playerdata ("
+        String query = "CREATE TABLE IF NOT EXISTS " + tableName + " ("
                 + "uuid VARCHAR(255), "
                 + "potionKey VARCHAR(255), "
                 + "attrList VARCHAR(255), "
@@ -53,7 +55,7 @@ public class SQLManager {
 
     @SneakyThrows
     public void insert(String uuid, String potionKey, List<String> attrList, Long useTime, String group) {
-        String query = "INSERT INTO playerdata (uuid, potionKey, attrList, potionGroup, useTime) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO " + tableName + " (uuid, potionKey, attrList, potionGroup, useTime) VALUES (?, ?, ?, ?, ?)";
         @Cleanup Connection conn = getConnection();
         @Cleanup PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setString(1, uuid);
@@ -64,11 +66,11 @@ public class SQLManager {
         stmt.executeUpdate();
     }
 
+
     @SneakyThrows
     public HashMap<String, List<Object>> getPotionData(String uuid) {
-
         HashMap<String, List<Object>> potionData = new HashMap<>();
-        String query = "SELECT potionKey, attrList, potionGroup, useTime FROM playerdata WHERE uuid = ?";
+        String query = "SELECT potionKey, attrList, potionGroup, useTime FROM " + tableName + " WHERE uuid = ?";
 
         @Cleanup Connection conn = getConnection();
         @Cleanup PreparedStatement selectStmt = conn.prepareStatement(query);
@@ -94,10 +96,11 @@ public class SQLManager {
     }
 
 
+
     @SneakyThrows
     public void delete(String uuid, String potionKey) {
 
-        String query = "DELETE FROM playerdata WHERE uuid = ? AND potionKey = ?";
+        String query = "DELETE FROM " + tableName + " WHERE uuid = ? AND potionKey = ?";
 
         @Cleanup Connection conn = getConnection();
         @Cleanup PreparedStatement stmt = conn.prepareStatement(query);

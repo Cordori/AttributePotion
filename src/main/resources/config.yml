@@ -5,7 +5,7 @@ debug: false
 prefix: "&6[属性药水]"
 
 # 数据存储模式，SQLite 或 MySQL ，改了请重启
-database: 'SQLite'
+storage: 'SQLite'
 
 # 数据库设置
 MySQL:
@@ -13,7 +13,8 @@ MySQL:
   port: 3306
   username: root
   password: root
-  table: AttributePotion
+  fileName: AttributePotion
+  tableName: attributepotiondata
   # MySQL5 使用: com.mysql.jdbc.Driver
   # MySQL8 使用: com.mysql.cj.jdbc.Driver
   driver: 'com.mysql.jdbc.Driver'
@@ -31,6 +32,14 @@ dragoncoreKeys:
   X: '额外槽位2'
   C: '额外槽位3'
 
+# 是否启用萌芽兼容，修改之后需要重启
+germplugin: false
+
+germpluginKeys:
+  44: '额外槽位1'
+  45: '额外槽位2'
+  46: '额外槽位3'
+
 # 药水组设置，每个药水有单独的冷却，同组的药水共享冷却，例如使用了力量药水，30秒内无法再次使用力量或体力药水
 # 而30秒后初级药水组冷却完毕，但力量药水冷却60秒，仍旧无法使用，此时你只能使用体力药水
 group:
@@ -46,3 +55,5 @@ messages:
   outPotion: "%potion% &5效果已结束！"
   onPotionCooldown: "&b%potion% &7冷却中，剩余&e %cooldown% &7秒"
   onGroupCooldown: "&b%group% &7冷却中，剩余&e %cooldown% &7秒"
+  nearPotion: '&7成功为&e %range% &7格范围内的玩家：&6%playerList% &7使用了&b %potion%'
+  otherPotion: '&7您享受到来自&6 %player% &7的&b %potion% &7属性效果！'

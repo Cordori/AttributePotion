@@ -23,5 +23,6 @@ public class Potion {
     private final List<String> commands;
     private final List<String> endCommands;
     private final Map<String, Boolean> options;
+    private final int rangeValue;
 }
 
