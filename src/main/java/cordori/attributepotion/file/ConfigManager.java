@@ -18,6 +18,7 @@ public class ConfigManager {
     public static boolean debug;
     public static String prefix;
     public static String identifier;
+    public static boolean precise;
     public static boolean dragoncore;
     public static boolean germplugin;
     public static AhoCorasickDoubleArrayTrie<String> trie = new AhoCorasickDoubleArrayTrie<>();
@@ -30,12 +31,14 @@ public class ConfigManager {
     public static Map<String, Potion> potions = new HashMap<>();
     public static HashMap<String, String> messagesHashMap = new HashMap<>();
     public static HashMap<String, String> potionDisplayNameMap = new HashMap<>();
+    public static HashMap<String, String> potionDisplayLoreMap = new HashMap<>();
 
     public static void reloadMyConfig() {
         ap.reloadConfig();
         debug = ap.getConfig().getBoolean("debug");
         prefix = ap.getConfig().getString("prefix").replaceAll("&","§");
         identifier = ap.getConfig().getString("identifier");
+        precise= ap.getConfig().getBoolean("precise", false);
         dragoncore = ap.getConfig().getBoolean("dragoncore");
         germplugin = ap.getConfig().getBoolean("germplugin");
         loadGroup();
@@ -103,7 +106,11 @@ public class ConfigManager {
         if (config.getString("identifier").equalsIgnoreCase("name")) {
             trie.build(potionNames);
         } else {
-            trie.build(potionLores);
+            if(precise) {
+                trie.build(potionDisplayLoreMap);
+            } else {
+                trie.build(potionLores);
+            }
         }
     }
 
@@ -157,7 +164,9 @@ public class ConfigManager {
 
         for(String potionKey : potionKeys) {
             String displayName = config.getString(potionKey + ".name").replaceAll("&", "§");
-            potionDisplayNameMap.put(potionKey, displayName);
+            String displayLore = config.getString(potionKey + ".lore").replaceAll("&", "§");
+            potionDisplayNameMap.put(displayName, potionKey);
+            potionDisplayLoreMap.put(displayLore, potionKey);
             String name = config.getString(potionKey + ".name").replaceAll("[&§]\\w", "");
             String lore = config.getString(potionKey + ".lore").replaceAll("[&§]\\w", "");
             int time = config.getInt(potionKey + ".time", 0);

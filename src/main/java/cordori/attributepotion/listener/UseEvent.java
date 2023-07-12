@@ -18,7 +18,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -71,22 +73,44 @@ public class UseEvent implements Listener {
         }
     }
 
+    public static <K, V> K getKey(Map<K, V> map, V value) {
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            if (entry.getValue().equals(value)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
     public static boolean isAir(ItemStack item) { return item == null || item.getType() == Material.AIR; }
     public static String matchItem(ItemStack item) {
         String key;
+
+        if(isAir(item)) return null;
+
         if (ConfigManager.identifier.equalsIgnoreCase("name")) {
+
             String text = item.getItemMeta().getDisplayName();
             if (text == null) return null;
-            List<AhoCorasickDoubleArrayTrie.Hit<String>> hits = ConfigManager.trie.parseText(text);
-            if (hits.isEmpty()) return null;
-            key = hits.stream()
-                    .map(hit -> hit.value)
-                    .max(Comparator.comparingInt(String::length))
-                    .orElse(null);
-            return key;
+            // 如果完全匹配
+            if(ConfigManager.precise) {
+                if(ConfigManager.potionDisplayNameMap.containsKey(text)) {
+                    return ConfigManager.potionDisplayNameMap.get(text);
+                }
+            } else {
+                List<AhoCorasickDoubleArrayTrie.Hit<String>> hits = ConfigManager.trie.parseText(text);
+                if (hits.isEmpty()) return null;
+                return hits.stream()
+                        .map(hit -> hit.value)
+                        .max(Comparator.comparingInt(String::length))
+                        .orElse(null);
+            }
+
         } else if (ConfigManager.identifier.equalsIgnoreCase("lore")) {
-            if (item.getItemMeta().getLore() == null) return null;
-            String text = String.join(" ", item.getItemMeta().getLore());
+            List<String> lores = item.getItemMeta().getLore();
+            if (lores == null) return null;
+
+            String text = String.join(" ", lores);
             List<AhoCorasickDoubleArrayTrie.Hit<String>> hits = ConfigManager.trie.parseText(text);
             if (hits.isEmpty()) return null;
             key = hits.stream()
@@ -97,6 +121,8 @@ public class UseEvent implements Listener {
         } else {
             return null;
         }
+
+        return null;
     }
     public static boolean isGroupOnCooldown(Player player, UUID uuid, String group, long useTime) {
         // 如果这个药水的药水组设置为空或者不是已设置的药水组，终止
@@ -145,9 +171,9 @@ public class UseEvent implements Listener {
 
             if ((useTime - lastPotionTime) / 1000 <= potionCooldown) {
                 if(ConfigManager.messagesHashMap.containsKey("onPotionCooldown")) {
-                    String name = ConfigManager.potionDisplayNameMap.get(key);
+                    String name = getKey(ConfigManager.potionDisplayNameMap, key);
                     player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("onPotionCooldown")
-                            .replace("%potion%", name)
+                            .replace("%potion%", Objects.requireNonNull(name))
                             .replace("%cooldown%", String.valueOf(potionCooldown - (useTime - lastPotionTime) / 1000))
                     );
                 }
@@ -350,7 +376,7 @@ public class UseEvent implements Listener {
 
         addAttribute(player, key, attrList);
 
-        String name = ConfigManager.potionDisplayNameMap.get(key);
+        String name = getKey(ConfigManager.potionDisplayNameMap, key);
         // 到时清除属性源
         if(time>0) {
             // 插入数据到数据库
@@ -370,7 +396,7 @@ public class UseEvent implements Listener {
 
                         player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("outPotion")
                                 .replaceAll("%player%", player.getName())
-                                .replaceAll("%potion%", name)
+                                .replaceAll("%potion%", Objects.requireNonNull(name))
                         );
                     }
                 }
@@ -379,13 +405,6 @@ public class UseEvent implements Listener {
             SQLManager.sql.insert(String.valueOf(uuid), key, attrList, -1L, group);
         }
 
-        if(ConfigManager.messagesHashMap.containsKey("usePotion")) {
-            player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("usePotion")
-                    .replace("%player%", player.getName())
-                    .replace("%potion%", name)
-                    .replace("%time%", String.valueOf(time))
-            );
-        }
     }
     public static void isConsume(Potion potion, ItemStack item) {
         if(potion.isConsume()) {
@@ -406,7 +425,7 @@ public class UseEvent implements Listener {
 
             // 范围使用
             if(options.containsKey("range") && options.get("range")) {
-                String name = ConfigManager.potionDisplayNameMap.get(key);
+                String name = getKey(ConfigManager.potionDisplayNameMap, key);
                 int rangeValue = potion.getRangeValue();
                 if(rangeValue > 0) {
                     List<String> playerList = new ArrayList<>();
@@ -419,7 +438,7 @@ public class UseEvent implements Listener {
                             if(ConfigManager.messagesHashMap.containsKey("otherPotion")) {
                                 player1.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("otherPotion")
                                         .replaceAll("%player%", player.getName())
-                                        .replaceAll("%potion%", name)
+                                        .replaceAll("%potion%", Objects.requireNonNull(name))
                                 );
                             }
                         }
@@ -435,7 +454,7 @@ public class UseEvent implements Listener {
                         player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("nearPotion")
                                 .replaceAll("%range%", String.valueOf(rangeValue))
                                 .replaceAll("%playerList%", String.valueOf(sb))
-                                .replaceAll("%potion%", name)
+                                .replaceAll("%potion%", Objects.requireNonNull(name))
                         );
                     }
                 }
@@ -499,6 +518,8 @@ public class UseEvent implements Listener {
             long startTime = System.currentTimeMillis();
             Player player = event.getPlayer();
             ItemStack item = event.getItem();
+            ItemStack mainItem = player.getInventory().getItemInMainHand();
+            ItemStack offItem = player.getInventory().getItemInOffHand();
 
             //物品为空，终止
             if(isAir(item)) return;
@@ -515,8 +536,17 @@ public class UseEvent implements Listener {
 
             //识别物品环节
             String key = matchItem(item);
-            if(key == null) return;
 
+            // 如果主手和副手都是药水物品，如果是副手使用，取消事件
+            if(matchItem(mainItem) != null && matchItem(offItem) != null && event.getHand().equals(EquipmentSlot.OFF_HAND)) {
+                return;
+            }
+            // 如果主手没东西副手是药水物品，取消主手的使用事件
+            else if(matchItem(mainItem) == null && matchItem(offItem) != null && event.getHand().equals(EquipmentSlot.HAND)) {
+                return;
+            }
+
+            if(key == null) return;
             Potion potion = ConfigManager.potions.get(key);
 
             //如果是需要按下shift使用的
@@ -561,6 +591,14 @@ public class UseEvent implements Listener {
             // 处理指令
             commandsProcess(potion, player);
 
+            if(ConfigManager.messagesHashMap.containsKey("usePotion")) {
+                player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("usePotion")
+                        .replace("%player%", player.getName())
+                        .replace("%potion%", name)
+                        .replace("%time%", String.valueOf(potion.getTime()))
+                );
+            }
+
             if(ConfigManager.debug) {
                 long endTime = System.currentTimeMillis();
                 long elapsedTime = endTime - startTime;
@@ -595,6 +633,15 @@ public class UseEvent implements Listener {
         });
     }
 
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Bukkit.getScheduler().runTaskAsynchronously(ap, () -> {
+            Player player = event.getPlayer();
+            UUID uuid = player.getUniqueId();
+            ConfigManager.playerUseTime.remove(uuid);
+            SXHook.attributeMap.remove(uuid);
+        });
+    }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -623,59 +670,57 @@ public class UseEvent implements Listener {
                 List<String> attrList = Arrays.asList(str.split(","));
                 String group = (String) potionData.get(key).get(1);
 
-                if(!SXHook.attributeMap.get(uuid).containsKey(key)) {
 
-                    SXHook.attributeMap.get(uuid).put(key, attrList);
-                    long lastTime = (long) potionData.get(key).get(2);
+                SXHook.attributeMap.get(uuid).put(key, attrList);
+                long lastTime = (long) potionData.get(key).get(2);
 
-                    ConfigManager.playerUseTime.get(uuid).put(key, lastTime);
-                    ConfigManager.playerUseTime.get(uuid).put(group, lastTime);
-                    if(lastTime == -1L) continue;
+                ConfigManager.playerUseTime.get(uuid).put(key, lastTime);
+                ConfigManager.playerUseTime.get(uuid).put(group, lastTime);
+                if(lastTime == -1L) continue;
 
-                    long currentTime = System.currentTimeMillis();
-                    int time = ConfigManager.potions.get(key).getTime();
+                long currentTime = System.currentTimeMillis();
+                int time = ConfigManager.potions.get(key).getTime();
 
-                    if(ConfigManager.debug) {
-                        LogInfo.debug("§6----------------------------");
-                        LogInfo.debug(key);
-                        LogInfo.debug(attrList.toString());
-                        LogInfo.debug(group);
-                        LogInfo.debug(String.valueOf(lastTime));
-                        LogInfo.debug("§6----------------------------");
-                    }
-
-
-                    if(currentTime - lastTime < time * 1000L) {
-                        int remainTime = (int) (time - (currentTime - lastTime) / 1000);
-
-                        if(time > 0) {
-
-                            Bukkit.getScheduler().runTaskLaterAsynchronously(ap, () -> {
-
-                                endCommandsProcess(ConfigManager.potions.get(key), player);
-
-                                takeAttribute(player, key);
-
-                                // 从数据库删除数据
-                                SQLManager.sql.delete(uid, key);
-
-                                if (player.isOnline()) {
-                                    if(ConfigManager.messagesHashMap.containsKey("outPotion")) {
-                                        String name = ConfigManager.potionDisplayNameMap.get(key);
-                                        player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("outPotion")
-                                                .replaceAll("%player%", player.getName())
-                                                .replaceAll("%potion%", name)
-                                        );
-                                    }
-                                }
-                            }, remainTime * 20L);
-                        }
-
-                    } else {
-                        SXHook.attributeMap.get(uuid).remove(key);
-                        SQLManager.sql.delete(uid, key);
-                    }
+                if(ConfigManager.debug) {
+                    LogInfo.debug("§6----------------------------");
+                    LogInfo.debug(key);
+                    LogInfo.debug(attrList.toString());
+                    LogInfo.debug(group);
+                    LogInfo.debug(String.valueOf(lastTime));
+                    LogInfo.debug("§6----------------------------");
                 }
+
+
+                if(currentTime - lastTime < time * 1000L) {
+                    int remainTime = (int) (time - (currentTime - lastTime) / 1000);
+                    addAttribute(player, key, attrList);
+
+                    if(time > 0) {
+
+                        Bukkit.getScheduler().runTaskLaterAsynchronously(ap, () -> {
+
+                            endCommandsProcess(ConfigManager.potions.get(key), player);
+
+                            takeAttribute(player, key);
+
+                            // 从数据库删除数据
+                            SQLManager.sql.delete(uid, key);
+
+                            if (player.isOnline()) {
+                                if(ConfigManager.messagesHashMap.containsKey("outPotion")) {
+                                    String name = getKey(ConfigManager.potionDisplayNameMap, key);
+                                    player.sendMessage(ConfigManager.prefix + ConfigManager.messagesHashMap.get("outPotion")
+                                            .replaceAll("%player%", player.getName())
+                                            .replaceAll("%potion%", Objects.requireNonNull(name))
+                                    );
+                                }
+                            }
+                        }, remainTime * 20L);
+                    }
+                } else {
+                    SQLManager.sql.delete(uid, key);
+                }
+
 
             }
 
